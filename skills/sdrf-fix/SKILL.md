@@ -1,0 +1,155 @@
+---
+name: sdrf:fix
+description: Use when the user has an SDRF file with known errors and wants them fixed automatically. Triggers on requests to fix, correct, or repair SDRF errors.
+user-invocable: true
+argument-hint: "[file path or paste SDRF content]"
+---
+
+# SDRF Auto-Fix Workflow
+
+You are fixing known common errors in an SDRF file. Apply fixes systematically.
+
+## Common Error Patterns and Their Fixes
+
+### 1. UNIMOD Accession Swaps (45% of all errors)
+| Wrong | Correct | Modification |
+|-------|---------|-------------|
+| UNIMOD:21 for Acetyl | UNIMOD:1 | Acetyl |
+| UNIMOD:1 for Phospho | UNIMOD:21 | Phospho |
+| UNIMOD:34 for Oxidation | UNIMOD:35 | Oxidation |
+| UNIMOD:35 for Methyl | UNIMOD:34 | Methyl |
+
+**Fix**: Parse NT= field, look up correct UNIMOD accession, replace AC= field.
+
+### 2. Missing Ontology Prefix (30%)
+| Wrong | Correct |
+|-------|---------|
+| `0000305` | `EFO:0000305` |
+| `9606` | `NCBITaxon:9606` |
+| `0002107` | `UBERON:0002107` |
+
+**Fix**: Detect bare numbers, infer ontology from column type, add prefix.
+
+### 3. Case Normalization (25%)
+| Wrong | Correct |
+|-------|---------|
+| `Male` | `male` |
+| `Female` | `female` |
+| `Homo Sapiens` | `Homo sapiens` |
+| `Not Available` | `not available` |
+
+**Fix**: Lowercase sex values and reserved words. Organism names follow binomial rules (capital genus, lowercase species).
+
+### 4. Python/Programming Artifacts (15%)
+| Wrong | Correct |
+|-------|---------|
+| `['breast cancer']` | `breast cancer` |
+| `nan` | `not available` |
+| `None` | `not available` |
+| `""` | (empty or `not available`) |
+
+**Fix**: Strip brackets, quotes; replace nan/None with reserved words.
+
+### 5. Reserved Word Standardization
+| Wrong | Correct |
+|-------|---------|
+| `N/A` | `not applicable` |
+| `NA` | `not available` |
+| `n/a` | `not applicable` |
+| `unknown` | `not available` |
+| `null` | `not available` |
+| `-` | `not available` |
+
+**Fix**: Replace with correct SDRF reserved words.
+
+### 6. DIA/DDA Terminology
+| Wrong | Correct |
+|-------|---------|
+| `data-dependent acquisition` | `Data-Dependent Acquisition` |
+| `data-independent` | `Data-Independent Acquisition` |
+| `DDA` | `Data-Dependent Acquisition` |
+| `DIA` | `Data-Independent Acquisition` |
+
+**Fix**: Use the ontology-standard full name.
+
+### 7. Age Format
+| Wrong | Correct |
+|-------|---------|
+| `58 years` | `58Y` |
+| `58` | `58Y` |
+| `6 months` | `6M` |
+| `14 days` | `14D` |
+| `58yo` | `58Y` |
+
+**Fix**: Extract number, map unit to Y/M/D suffix.
+
+### 8. Modification Parameter Format
+| Wrong | Correct |
+|-------|---------|
+| `Carbamidomethyl (C)` | `NT=Carbamidomethyl;AC=UNIMOD:4;TA=C;MT=Fixed` |
+| `Oxidation (M)` | `NT=Oxidation;AC=UNIMOD:35;TA=M;MT=Variable` |
+| `NT=Acetyl;AC=UNIMOD:1;TA=Protein N-term` | `NT=Acetyl;AC=UNIMOD:1;PP=Protein N-term;MT=Variable` |
+
+**Fix**: Parse free-text mods, construct proper NT/AC/TA/MT format.
+
+### 9. Trailing Whitespace
+**Fix**: Trim all cell values and column names.
+
+### 10. Instrument Format
+| Wrong | Correct |
+|-------|---------|
+| `Q Exactive` | `AC=MS:1001911;NT=Q Exactive` |
+| `Orbitrap Fusion Lumos` | `AC=MS:1002732;NT=Orbitrap Fusion Lumos` |
+
+**Fix**: If missing AC= format, search OLS MS ontology and construct proper format.
+```
+mcp OLS → searchClasses(query="<instrument>", ontologyId="ms")
+```
+
+## Fix Procedure
+
+1. **Parse** the SDRF into a structured table
+2. **Scan** every cell for each error pattern above
+3. **Apply fixes** — for ontology-dependent fixes, verify via OLS before changing
+4. **Log changes** — track every change made (row, column, old value, new value, reason)
+5. **Present changelog** to user before outputting the fixed SDRF
+6. **Output** the corrected SDRF as a TSV code block
+
+## Changelog Format
+
+```
+Changes Applied:
+  Row 3, comment[modification parameters]:
+    OLD: NT=Acetyl;AC=UNIMOD:21;TA=Protein N-term;MT=Variable
+    NEW: NT=Acetyl;AC=UNIMOD:1;PP=Protein N-term;MT=Variable
+    FIX: UNIMOD:21 is Phospho, not Acetyl. Correct accession is UNIMOD:1. Also TA→PP for position.
+
+  Row 5, characteristics[sex]:
+    OLD: Male
+    NEW: male
+    FIX: Sex values must be lowercase per SDRF specification.
+
+  All rows, comment[data file]:
+    FIX: Trimmed trailing whitespace from 12 values.
+
+Summary: 15 fixes applied (3 UNIMOD corrections, 5 case fixes, 7 whitespace trims)
+```
+
+## Step After Fixes: Re-Validate
+
+After applying all fixes, run a quick validation pass:
+1. Check that no new issues were introduced by the fixes
+2. Verify fixed UNIMOD accessions match the NT= modification names
+3. Read `spec/sdrf-proteomics/TERMS.tsv` and check `allow_not_available`/`allow_not_applicable` fields to confirm fixed reserved words are valid for each column
+4. Count: total fixes applied, remaining issues not auto-fixable
+
+Present the re-validation summary alongside the changelog.
+
+## When NOT to Auto-Fix
+
+- Values that might be intentionally different (ask the user)
+- Ontology terms where the "correct" version is ambiguous
+- Missing columns (suggest but don't add without user approval)
+- Factor values (design decisions — always ask)
+- Cell line names (need Cellosaurus verification)
+- Organism names that might be intentional (e.g., hybrid organisms)
