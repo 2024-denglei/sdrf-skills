@@ -97,13 +97,13 @@ For EACH unique value in ontology-controlled columns, verify via OLS.
 Use TERMS.tsv `values` field to determine which ontology(ies) to search for each column.
 
 ### Organism
-```
+```text
 searchClasses(query="<organism>", ontologyId="ncbitaxon")
 Verify: term exists, case is correct (Genus capitalized, species lowercase: "Homo sapiens")
 ```
 
 ### Disease
-```
+```text
 search(query="<disease>")
 Verify: term exists in MONDO, EFO, or DOID
 Check specificity: "cancer" too generic → use "breast carcinoma"
@@ -111,26 +111,26 @@ Special case: "normal" is valid (PATO:0000461)
 ```
 
 ### Tissue / Organism Part
-```
+```text
 searchClasses(query="<tissue>", ontologyId="uberon")
 Fallback: searchClasses(query="<tissue>", ontologyId="bto")
 ```
 
 ### Cell Type
-```
+```text
 searchClasses(query="<cell type>", ontologyId="cl")
 Fallback: searchClasses(query="<cell type>", ontologyId="bto")
 ```
 
 ### Instrument
-```
+```text
 Parse NT= and AC= from comment[instrument] value
 searchClasses(query="<instrument name>", ontologyId="ms")
 Verify: AC= matches the returned MS accession
 ```
 
 ### Modifications — CRITICAL
-```
+```text
 Parse NT=, AC=, TA=, MT= from each comment[modification parameters]
 Verify:
   - AC= is valid UNIMOD accession
@@ -144,7 +144,7 @@ Verify:
 ```
 
 ### Cleavage Agent
-```
+```text
 Parse NT= and AC= from comment[cleavage agent details]
 searchClasses(query="<enzyme>", ontologyId="ms")
 Verify: AC= matches
@@ -182,7 +182,7 @@ List each warning with: what could be improved and why.
 Missing recommended columns, specificity improvements.
 
 ### Summary
-```
+```text
 Validation Report:
   Templates: [detected templates with versions]
   Rows: X  |  Columns: Y

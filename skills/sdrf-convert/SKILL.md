@@ -24,7 +24,7 @@ sdrf-pipelines can convert SDRF to these formats:
 
 ## Pipeline Recommendation Logic
 
-```
+```text
 Is it DIA data?
 ├── YES → DIA-NN (fastest, best DIA performance)
 │         Also consider: quantms with DIA module

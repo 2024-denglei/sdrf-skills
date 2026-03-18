@@ -87,12 +87,12 @@ NEVER use: "N/A", "NA", "n/a", "null", "none", "unknown", "Unknown" — always u
 ## Modification Parameter Format
 
 The format for `comment[modification parameters]` is strict:
-```
+```text
 NT=<name>;AC=UNIMOD:<id>;TA=<target amino acid>;MT=<Fixed|Variable>
 ```
 
 For protein/peptide-level position modifications, use PP instead of TA:
-```
+```text
 NT=Acetyl;AC=UNIMOD:1;PP=Protein N-term;MT=Variable
 NT=TMT6plex;AC=UNIMOD:737;PP=Any N-term;MT=Fixed
 ```
@@ -127,7 +127,7 @@ The UNIMOD:1 ↔ UNIMOD:21 swap is the **#1 most common error** in SDRF files (~
 | iTRAQ4plex | `iTRAQ114`, `iTRAQ115`, `iTRAQ116`, `iTRAQ117` | 4 rows per file |
 
 Row count formula:
-```
+```text
 Rows = samples × fractions × label_channels × technical_replicates
 ```
 

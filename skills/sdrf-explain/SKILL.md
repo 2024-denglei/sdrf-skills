@@ -21,7 +21,7 @@ Use the sdrf-knowledge and sdrf-templates background skills for reference.
 
 ### Example Explanation
 
-```
+```text
 User: "What is comment[modification parameters]?"
 
 This column describes the post-translational modifications (PTMs) searched in
@@ -69,7 +69,7 @@ COMMON MISTAKE:
 
 ### Example Error Explanations
 
-```
+```text
 Error: "UNIMOD:21 used for Acetyl"
 
 WHAT IT MEANS:
@@ -91,7 +91,7 @@ HOW TO PREVENT:
   Always verify UNIMOD accessions: Acetyl=1, Phospho=21.
 ```
 
-```
+```text
 Error: "Missing required column: characteristics[biological replicate]"
 
 WHAT IT MEANS:
@@ -142,7 +142,7 @@ You declare templates via `comment[sdrf template]` columns:
 See `/sdrf:templates` for the full selection guide and decision tree.
 
 ### "How many rows should my SDRF have?"
-```
+```text
 Rows = samples × fractions × label_channels × technical_replicates
 
 Label-free:  1 row per file

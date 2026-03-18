@@ -5,7 +5,7 @@ annotation in proteomics.
 
 ## Available Workflows
 
-The `skills/` directory contains 12 workflow files (SKILL.md) that encode community
+The `skills/` directory contains 14 workflow files (SKILL.md) that encode community
 annotation expertise. When working with SDRF files, consult the relevant skill:
 
 - **Format rules**: `skills/sdrf-knowledge/SKILL.md` — column naming, ontology mappings, modification format
@@ -20,6 +20,8 @@ annotation expertise. When working with SDRF files, consult the relevant skill:
 - **Education**: `skills/sdrf-explain/SKILL.md` — explain SDRF concepts
 - **Pipelines**: `skills/sdrf-convert/SKILL.md` — pipeline configuration
 - **Design**: `skills/sdrf-design/SKILL.md` — experimental design analysis
+- **Contribute**: `skills/sdrf-contribute/SKILL.md` — PR to community repository
+- **Tech Refine**: `skills/sdrf-techrefine/SKILL.md` — verify/refine technical metadata from raw files via techsdrf
 
 ## Specification Data
 

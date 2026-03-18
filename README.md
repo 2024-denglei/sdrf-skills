@@ -16,7 +16,7 @@ guided by the methodology of experienced annotators.
 The SDRF specification data (column definitions, templates) lives in a git submodule
 and is read at runtime — so the skills stay current when the spec evolves.
 
-All 12 skills are under the `sdrf:` namespace. In Claude Code, type `/sdrf:` and autocomplete will show them all.
+All 14 skills are under the `sdrf:` namespace. In Claude Code, type `/sdrf:` and autocomplete will show them all.
 
 | Skill | What it does |
 |-------|-------------|
@@ -32,6 +32,8 @@ All 12 skills are under the `sdrf:` namespace. In Claude Code, type `/sdrf:` and
 | `/sdrf:explain` | Explain any column, error, or concept in plain language |
 | `/sdrf:convert` | Choose and configure analysis pipelines from SDRF |
 | `/sdrf:design` | Detect batch effects, confounders, replication issues |
+| `/sdrf:contribute` | Contribute annotated SDRF back to community via PR |
+| `/sdrf:techrefine` | Verify/refine technical metadata from raw files via techsdrf |
 
 ## Installation
 
@@ -105,12 +107,18 @@ This plugin expects the following MCP servers to be configured in your Claude se
 - **Consensus** — Academic research search
 - **Open Targets** — Disease-target associations
 
+### Optional CLI tools
+
+- **techsdrf** — Raw MS file analysis for refining SDRF technical metadata (`pip install techsdrf`).
+  Used by `/sdrf:techrefine`. Requires ThermoRawFileParser for Thermo .raw files
+  (`conda install -c bioconda thermorawfileparser`).
+
 These provide the real-time data access. The skills provide the methodology.
 
 ## Example Usage
 
 ### Ask about templates
-```
+```text
 You: /sdrf:templates I have a DIA phosphoproteomics study on mouse brain
 
 Claude: For your experiment, I recommend:
@@ -122,7 +130,7 @@ Claude: For your experiment, I recommend:
 ```
 
 ### Annotate a PRIDE dataset
-```
+```text
 You: /sdrf:annotate PXD045678
 
 Claude:
@@ -135,7 +143,7 @@ Claude:
 ```
 
 ### Ask about SDRF rules
-```
+```text
 You: /sdrf:knowledge What format should modification parameters use?
 
 Claude: The format for comment[modification parameters] is:
@@ -146,7 +154,7 @@ Claude: The format for comment[modification parameters] is:
 ```
 
 ### Fix an SDRF with errors
-```
+```text
 You: /sdrf:fix [paste SDRF content]
 
 Claude:
@@ -157,8 +165,34 @@ Claude:
   → Shows changelog → outputs corrected SDRF
 ```
 
-### Find the right ontology term
+### Contribute an annotation to the community
+```text
+You: /sdrf:contribute PXD045678
+
+Claude:
+  → Checks if PXD045678 already exists in annotated-projects/
+  → Validates the SDRF file
+  → Forks bigbio/proteomics-sample-metadata
+  → Creates branch annotation/PXD045678
+  → Commits the SDRF file to annotated-projects/PXD045678/
+  → Opens a PR with dataset summary (organism, templates, row count)
 ```
+
+### Refine technical metadata from raw files
+```text
+You: /sdrf:techrefine PXD045678
+
+Claude:
+  → Checks techsdrf prerequisites
+  → Presents refinement mode (PRIDE download vs local files)
+  → Assembles command: techsdrf refine -p PXD045678 -s input.sdrf.tsv -n 5 -o refined.sdrf.tsv
+  → Interprets results: instrument, tolerances, modifications, DDA/DIA
+  → Shows diff: "Q Exactive" → "Q Exactive HF-X", tolerance 20ppm → 10ppm
+  → Lets user approve/reject each change
+```
+
+### Find the right ontology term
+```text
 You: /sdrf:terms disease "liver cancer"
 
 Claude:
@@ -170,7 +204,7 @@ Claude:
 
 ## Architecture
 
-```
+```text
 sdrf-skills/
 ├── .claude-plugin/plugin.json    # Claude Code — plugin manifest
 ├── .cursor/rules/sdrf-skills.mdc # Cursor — rules file (auto-activates on *.sdrf.tsv)
@@ -194,8 +228,10 @@ sdrf-skills/
 │   ├── sdrf-brainstorm/SKILL.md  # /sdrf:brainstorm — metadata planning
 │   ├── sdrf-review/SKILL.md      # /sdrf:review — comprehensive review
 │   ├── sdrf-explain/SKILL.md     # /sdrf:explain — explain any concept
+│   ├── sdrf-contribute/SKILL.md   # /sdrf:contribute — PR to community repo
 │   ├── sdrf-convert/SKILL.md     # /sdrf:convert — pipeline guidance
-│   └── sdrf-design/SKILL.md      # /sdrf:design — experimental design analysis
+│   ├── sdrf-design/SKILL.md      # /sdrf:design — experimental design analysis
+│   └── sdrf-techrefine/SKILL.md   # /sdrf:techrefine — techsdrf raw file refinement
 ├── CLAUDE.md                     # Claude Code — project config
 ├── GEMINI.md                     # Gemini CLI — project config
 ├── BRAINSTORM.md                 # Design document
@@ -204,7 +240,7 @@ sdrf-skills/
 
 ## Cross-Platform Design
 
-The core of this plugin is the `skills/` directory — 12 markdown files that encode
+The core of this plugin is the `skills/` directory — 14 markdown files that encode
 annotation methodology. These are **platform-agnostic**. Each platform just needs a
 thin shim to discover and load them:
 

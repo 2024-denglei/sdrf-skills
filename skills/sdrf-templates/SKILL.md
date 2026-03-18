@@ -88,7 +88,7 @@ Read `templates.yaml` for the full `excludes` field on each template to verify m
 
 ## Template Selection Decision Tree (Methodology)
 
-```
+```text
 Is it mass spectrometry?
 ├── YES → ms-proteomics
 │   ├── Human samples? → + human

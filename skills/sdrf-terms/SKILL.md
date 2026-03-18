@@ -29,7 +29,7 @@ Always read TERMS.tsv rather than relying on memorized ontology mappings — the
 
 Use the OLS MCP tools to find the term:
 
-```
+```text
 Primary search:
   mcp OLS → searchClasses(query="<user term>", ontologyId="<ontology>")
 
@@ -61,7 +61,7 @@ When presenting results, assess specificity:
 - "left breast upper inner quadrant" — probably too specific for most studies
 
 To check specificity, use hierarchy navigation:
-```
+```text
 mcp OLS → getAncestors(ontologyId="<ont>", classIri="<iri>")
 mcp OLS → getChildren(ontologyId="<ont>", classIri="<iri>")
 ```
@@ -70,7 +70,7 @@ mcp OLS → getChildren(ontologyId="<ont>", classIri="<iri>")
 
 When the user has a term from one ontology but needs another:
 
-```
+```text
 Example: User has DOID term, needs EFO equivalent
   1. Get the DOID term details: mcp OLS → fetch(id="doid+<iri>")
   2. Search EFO for the same concept: mcp OLS → searchClasses(query="<label>", ontologyId="efo")
@@ -86,7 +86,7 @@ For disease terms, SDRF accepts EFO, MONDO, or DOID. Recommend:
 
 For each term found, present:
 
-```
+```text
 Term: breast carcinoma
 Accession: EFO:0000305
 Ontology: Experimental Factor Ontology (EFO)

@@ -15,19 +15,19 @@ Do not skip steps. Do not guess — use MCP tools to verify everything.
 If a **PXD accession** is provided:
 
 ### 1.1 Get PRIDE project metadata
-```
+```text
 Tool: get_project_details(project_accession="PXD######")
 Extract: organism, instruments, modifications, publications (PMID/DOI), file count, description
 ```
 
 ### 1.2 Get the file list
-```
+```text
 Tool: get_project_files(project_accession="PXD######")
 Extract: raw file names (for comment[data file]), file count, file types
 ```
 
 ### 1.3 Find and read the publication
-```
+```text
 a. Extract PMID or DOI from PRIDE response (publications field)
 b. If PMID → get_article_metadata(pmids=["PMID"])
 c. Convert to PMC ID → convert_article_ids(ids=["PMID"], id_type="pmid")
@@ -93,7 +93,7 @@ Organize columns in this order:
 - `factor value[<variable>]`
 
 **SDRF metadata:**
-- `comment[sdrf version]` (value: `v1.1.0`)
+- `comment[sdrf version]` (read the current version from `spec/sdrf-proteomics/sdrf-templates/templates.yaml`)
 - `comment[sdrf template]` (one column per template, format: `NT=template_name;VV=vX.Y.Z`)
 
 ## Step 4: Fill Sample Metadata
@@ -101,7 +101,7 @@ Organize columns in this order:
 For EACH unique value that goes into a characteristics column:
 
 ### 4.1 Search OLS for the correct ontology term
-```
+```text
 Use: searchClasses(query="breast carcinoma", ontologyId="mondo")
 Or: search(query="Homo sapiens")
 ```
@@ -132,14 +132,14 @@ Read TERMS.tsv `values` field for the column to determine which ontology(ies) to
 ## Step 5: Fill Technical Metadata
 
 ### 5.1 Instrument
-```
+```text
 searchClasses(query="Q Exactive", ontologyId="ms")
 Format in SDRF: AC=MS:1001911;NT=Q Exactive HF
 ```
 
 ### 5.2 Modifications — CRITICAL
 Use EXACT UNIMOD accessions. Common setup:
-```
+```text
 Column 1: NT=Carbamidomethyl;AC=UNIMOD:4;TA=C;MT=Fixed
 Column 2: NT=Oxidation;AC=UNIMOD:35;TA=M;MT=Variable
 Column 3: NT=Acetyl;AC=UNIMOD:1;PP=Protein N-term;MT=Variable
@@ -148,7 +148,7 @@ Column 3: NT=Acetyl;AC=UNIMOD:1;PP=Protein N-term;MT=Variable
 For TMT: UNIMOD:737 (TMT6/10/11plex) or UNIMOD:2016 (TMTpro 16/18plex)
 
 ### 5.3 Cleavage agent
-```
+```text
 searchClasses(query="Trypsin", ontologyId="ms")
 Format: NT=Trypsin;AC=MS:1001251
 ```
@@ -163,6 +163,17 @@ Use PRIDE ontology terms:
 - `Data-Dependent Acquisition`
 - `Data-Independent Acquisition`
 
+### 5.6 Verify technical metadata with raw file analysis (recommended)
+If the dataset has raw files available (PRIDE or local), recommend using **techsdrf**
+to verify and refine the technical metadata filled in Steps 5.1–5.5:
+```text
+Run /sdrf:techrefine PXD###### to verify instrument, tolerances, modifications,
+and DDA/DIA classification directly from the raw MS files.
+```
+techsdrf can detect discrepancies between what's declared in the paper/PRIDE and
+what's actually in the raw data — especially for instrument model specificity,
+mass tolerances, and undeclared or incorrect modifications.
+
 ## Step 6: Map Files to Samples
 
 - Get file names from Step 1.2 (PRIDE file list)
@@ -172,7 +183,7 @@ Use PRIDE ontology terms:
 - Set `comment[technical replicate]` starting from 1
 
 **Row count formula:**
-```
+```text
 Total rows = samples × fractions × label_channels × technical_replicates
 ```
 
@@ -185,8 +196,8 @@ Total rows = samples × fractions × label_channels × technical_replicates
 
 ## Step 8: Add SDRF Metadata
 
-- `comment[sdrf version]` → `v1.1.0`
-- `comment[sdrf template]` → one column per template: `NT=ms-proteomics;VV=v1.1.0`
+- `comment[sdrf version]` → read latest version from `spec/sdrf-proteomics/sdrf-templates/templates.yaml`
+- `comment[sdrf template]` → one column per template: `NT={template_name};VV=v{version}` (versions from templates.yaml)
 - `comment[sdrf annotation tool]` → `manual curation` (or tool name if applicable)
 
 ## Step 9: Present and Validate
@@ -199,6 +210,29 @@ Present the completed SDRF as a TSV code block and explain:
 - Any values marked as `not available` (ask user to fill)
 - Any values you're uncertain about (flag for user review)
 - Suggest running `sdrf-pipelines validate-sdrf` for programmatic validation
+
+## Step 10: Recommend Community Contribution
+
+If the annotation was for a **ProteomeXchange dataset** (PXD accession):
+
+1. Check if this PXD already exists in `spec/annotated-projects/{PXD}/`
+2. Tell the user their annotation can be contributed to the community:
+
+```text
+Your SDRF annotation for {PXD} is ready!
+
+The proteomics-sample-metadata community repository collects annotated SDRF files
+for ProteomeXchange datasets. Contributing your annotation means:
+  - Other researchers can reuse your metadata
+  - Analysis pipelines (quantms) can automatically reprocess the dataset
+  - The annotation becomes part of the PRIDE SDRF Explorer
+
+Run /sdrf:contribute {PXD} to create a PR, or see the commands to do it manually.
+```
+
+3. If the PXD already exists in annotated-projects/, mention this is an update to an existing annotation
+
+This step is a recommendation only — do not force the user to contribute.
 
 ## Important Rules
 

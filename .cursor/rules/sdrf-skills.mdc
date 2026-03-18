@@ -31,6 +31,8 @@ When working with SDRF files or proteomics metadata, follow these workflows:
 - **Explain concepts**: `skills/sdrf-explain/SKILL.md` — plain-language SDRF education
 - **Choose pipelines**: `skills/sdrf-convert/SKILL.md` — MaxQuant, DIA-NN, quantms guidance
 - **Analyze design**: `skills/sdrf-design/SKILL.md` — batch effects, confounders, replication
+- **Contribute**: `skills/sdrf-contribute/SKILL.md` — PR to community repository
+- **Tech Refine**: `skills/sdrf-techrefine/SKILL.md` — verify/refine technical metadata from raw files via techsdrf
 
 ## Key Rules
 

@@ -26,7 +26,7 @@ Extract from the SDRF:
 
 Present a clear summary:
 
-```
+```text
 Experimental Design Summary:
   Type: Two-group comparison
   Factor: disease (breast carcinoma vs normal)
@@ -54,7 +54,7 @@ Experimental Design Summary:
 Cross-tabulate factor values against technical variables:
 
 ### Instrument Confounding
-```
+```text
 Check: Is "condition" confounded with "instrument"?
   Cross-tab factor value × comment[instrument]
 
@@ -65,7 +65,7 @@ Check: Is "condition" confounded with "instrument"?
 ```
 
 ### TMT/Label Assignment
-```
+```text
 Check: Are conditions balanced across TMT sets/channels?
   Cross-tab factor value × TMT set × channel position
 
@@ -76,7 +76,7 @@ Check: Are conditions balanced across TMT sets/channels?
 ```
 
 ### Temporal Confounding
-```
+```text
 Check: Were conditions processed at different times?
   If file names contain dates → check if conditions cluster by date
 
@@ -88,7 +88,7 @@ Check: Were conditions processed at different times?
 
 Check independence of factor values from other characteristics:
 
-```
+```text
 For each characteristics column × factor value:
   If perfectly or strongly correlated → FLAG
 
@@ -105,7 +105,7 @@ Use a simple contingency analysis:
 
 ## Step 5: Replication Assessment
 
-```
+```text
 Biological replicates per condition:
   n=1:  ⚠ CRITICAL — No statistical testing possible
   n=2:  ⚠ WARNING — Very low power, only extreme effects detectable
@@ -127,7 +127,7 @@ Based on the factor values, suggest:
 3. Whether paired analysis is appropriate (if `characteristics[individual]` IDs match across conditions)
 4. MSstats contrast matrix format:
 
-```
+```r
 Example for disease (breast carcinoma vs normal):
   comparison <- matrix(c(-1, 1), nrow=1)
   colnames(comparison) <- c("normal", "breast carcinoma")
@@ -143,7 +143,7 @@ Example for multi-group (A vs B, A vs C):
 
 Present findings as an actionable report:
 
-```
+```text
 # Experimental Design Analysis
 
 ## Summary

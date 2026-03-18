@@ -2,13 +2,13 @@
 
 ## Overview
 
-12 structured workflow files that encode expert-level SDRF (Sample and Data
+14 structured workflow files that encode expert-level SDRF (Sample and Data
 Relationship Format) annotation methodology for proteomics.
 
 ## Skills Directory
 
 All workflows are in `skills/*/SKILL.md`. Each file has YAML frontmatter (name,
-description) followed by a step-by-step workflow in markdown.
+description) followed by a step-by-step workflow in Markdown.
 
 ### Reference Guide
 
@@ -26,6 +26,8 @@ description) followed by a step-by-step workflow in markdown.
 | `sdrf-explain` | Plain-language education about any SDRF column, error, or concept |
 | `sdrf-convert` | Pipeline selection and conversion commands (MaxQuant, DIA-NN, OpenMS, quantms) |
 | `sdrf-design` | Experimental design analysis: batch effects, confounders, replication assessment |
+| `sdrf-contribute` | Contribute annotated SDRF to community repo via PR (automated or guided) |
+| `sdrf-techrefine` | Verify/refine technical metadata (instrument, tolerances, mods, DDA/DIA) from raw files via techsdrf |
 
 ## Specification Data
 

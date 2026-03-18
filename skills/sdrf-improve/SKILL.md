@@ -26,7 +26,7 @@ Evaluate the file on these 5 dimensions (score each 0-100):
 - Which RECOMMENDED columns are missing? (check individual template YAMLs for requirement levels)
 - Which OPTIONAL columns would add value for this experiment type?
 - Search for similar experiments in PRIDE to see what columns peers include:
-  ```
+  ```text
   mcp PRIDE → search_extensive(query="<organism> <disease> <technology>")
   ```
 
@@ -34,13 +34,16 @@ Evaluate the file on these 5 dimensions (score each 0-100):
 For each ontology-controlled column:
 - Is the term specific enough for the experiment context?
 - Could a more precise child term be used?
-  ```
+  ```text
   mcp OLS → getChildren(ontologyId="<ont>", classIri="<iri>")
   ```
 - Examples of insufficient specificity:
   - "cancer" → should be "breast invasive carcinoma"
   - "brain" → could be "temporal cortex" if the paper specifies
   - "blood" → could be "plasma" or "serum" if known
+- For technical columns (instrument, tolerances, modifications), specificity can be
+  verified with `/sdrf:techrefine` — techsdrf detects exact instrument models and
+  tolerances from raw files, replacing generic values with precise ones
 
 ### C. Consistency (are values uniform across the file?)
 - Case consistency: "Male" vs "male" vs "MALE"
@@ -68,12 +71,12 @@ For each ontology-controlled column:
 Use MCP tools to gather improvement suggestions:
 
 1. **Similar datasets**: Search PRIDE for well-annotated similar experiments
-   ```
+   ```text
    mcp PRIDE → fetch_projects(keyword="<organism> <tissue> <technology>")
    ```
 
 2. **Better ontology terms**: For each term, check if a more specific child exists
-   ```
+   ```text
    mcp OLS → getChildren(ontologyId="<ont>", classIri="<current_term_iri>")
    ```
 
@@ -114,7 +117,7 @@ Issues that improve completeness but aren't critical.
 
 Calculate the overall score as a weighted average of the 5 dimensions:
 
-```
+```text
 Overall = (Completeness × 0.30) + (Specificity × 0.25) + (Consistency × 0.15)
         + (Standards × 0.15) + (Design × 0.15)
 ```
@@ -126,7 +129,7 @@ Scoring guide per dimension:
 - **0-49**: Poor — major structural or semantic problems
 
 Present the score:
-```
+```text
 Quality Score: 72/100
 
   Completeness:  85/100 ████████░░ — Missing: cell type, developmental stage

@@ -102,7 +102,7 @@ You are fixing known common errors in an SDRF file. Apply fixes systematically.
 | `Orbitrap Fusion Lumos` | `AC=MS:1002732;NT=Orbitrap Fusion Lumos` |
 
 **Fix**: If missing AC= format, search OLS MS ontology and construct proper format.
-```
+```text
 mcp OLS → searchClasses(query="<instrument>", ontologyId="ms")
 ```
 
@@ -117,7 +117,7 @@ mcp OLS → searchClasses(query="<instrument>", ontologyId="ms")
 
 ## Changelog Format
 
-```
+```text
 Changes Applied:
   Row 3, comment[modification parameters]:
     OLD: NT=Acetyl;AC=UNIMOD:21;TA=Protein N-term;MT=Variable
@@ -144,6 +144,10 @@ After applying all fixes, run a quick validation pass:
 4. Count: total fixes applied, remaining issues not auto-fixable
 
 Present the re-validation summary alongside the changelog.
+
+If all errors are fixed and the SDRF is for a ProteomeXchange dataset (PXD accession),
+suggest contributing the corrected annotation via `/sdrf:contribute {PXD}` to the
+`proteomics-sample-metadata` community repository.
 
 ## When NOT to Auto-Fix
 

@@ -35,7 +35,7 @@ Reference the 5 template layers:
 Read `spec/sdrf-proteomics/sdrf-templates/templates.yaml` to confirm template names and current versions.
 
 Present the recommendation:
-```
+```text
 Your experiment: [description]
 
 Recommended templates:
@@ -54,7 +54,7 @@ Read `spec/sdrf-proteomics/TERMS.tsv` and filter by the selected template names 
 
 Find reference datasets to learn from:
 
-```
+```text
 Search PRIDE for similar experiments:
   mcp PRIDE → search_extensive(query="<keywords>")
 
@@ -69,14 +69,14 @@ Search Consensus for peer-reviewed evidence:
 ```
 
 Present findings:
-```
+```text
 Similar datasets found:
   - PXD012345: TMT phosphoproteomics of breast cancer (24 samples, 12 fractions)
   - PXD023456: Label-free DIA of liver cancer tissue (30 patients)
 
 Common design patterns in this field:
   - Typical sample size: 10-30 per group
-  - Most common label: TMT (65%) or label-free DIA (30%)
+  - Common labels: TMT, label-free DIA, SILAC
   - Standard fractionation: 12-24 high-pH RP fractions
   - Most include: age, sex, disease staging
 ```
@@ -131,7 +131,7 @@ Raise potential issues proactively:
 
 Help the user understand the scale:
 
-```
+```text
 Your SDRF will have:
   Rows: [samples] × [fractions] × [label channels] × [technical replicates]
 
@@ -145,7 +145,7 @@ Your SDRF will have:
 
 Create a clear annotation plan the user can follow:
 
-```
+```text
 ## SDRF Annotation Plan for [experiment]
 
 Templates: ms-proteomics + human + oncology-metadata

@@ -15,7 +15,7 @@ would for a PRIDE submission or a community annotation PR.
 1. **Read the SDRF** content
 2. **Detect templates** from metadata or content
 3. **If PXD available** → fetch project context + publication:
-   ```
+   ```text
    mcp PRIDE → get_project_details(project_accession="PXD######")
    Extract PMID → mcp PubMed → get_article_metadata([pmid])
    ```
@@ -37,10 +37,14 @@ If a publication is available:
 - Are tissue types correctly annotated?
 
 Flag any discrepancies:
-```
+```text
 DISCREPANCY: Paper says "24 patients" but SDRF has 20 unique source names.
 DISCREPANCY: Paper mentions "hippocampus and temporal cortex" but SDRF only has "brain".
 ```
+
+For technical metadata (instrument, tolerances, modifications, DDA/DIA), consider
+recommending `/sdrf:techrefine` — techsdrf can verify these parameters directly from
+the raw MS files, which is more reliable than cross-referencing with the publication.
 
 ### Conflict Resolution
 When SDRF and paper/PRIDE disagree:
@@ -54,7 +58,7 @@ When SDRF and paper/PRIDE disagree:
 
 If a PXD accession is available:
 - Do file names in SDRF match files in PRIDE?
-  ```
+  ```text
   mcp PRIDE → get_project_files(project_accession="PXD######")
   ```
 - Does the organism match?
@@ -74,7 +78,7 @@ Analyze the experimental design:
 
 Calculate and present an overall quality score:
 
-```
+```text
 # SDRF Quality Review: PXD012345
 # Date: [date]
 # Templates: ms-proteomics, human, clinical-metadata
@@ -121,3 +125,6 @@ Provide clear next steps:
 2. Offer to auto-fix what can be auto-fixed (`/sdrf:fix`)
 3. Identify what needs human input (e.g., missing demographics)
 4. Suggest running final validation after fixes
+5. If the SDRF is for a ProteomeXchange dataset and the verdict is VALID or NEEDS MINOR FIXES:
+   suggest contributing the annotation via `/sdrf:contribute {PXD}` to the
+   `proteomics-sample-metadata` community repository
