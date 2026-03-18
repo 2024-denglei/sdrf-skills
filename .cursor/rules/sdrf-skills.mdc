@@ -1,0 +1,58 @@
+---
+description: sdrf-skills — expert-level proteomics metadata workflows
+globs:
+  - "**/*.sdrf.tsv"
+  - "**/*.sdrf"
+  - "**/sdrf*"
+alwaysApply: false
+---
+
+# sdrf-skills — SDRF Annotation Skills
+
+Structured skills for expert-level SDRF (Sample and Data Relationship Format)
+annotation in proteomics.
+
+## What You Can Do
+
+When working with SDRF files or proteomics metadata, follow these workflows:
+
+### Knowledge & Templates
+- **SDRF Format Rules**: See `skills/sdrf-knowledge/SKILL.md` for column naming, ontology mappings, modification format, reserved words
+- **Template Selection**: See `skills/sdrf-templates/SKILL.md` for the 5-layer template system, mutual exclusivity rules, and decision tree
+
+### Core Workflows
+- **Annotate a dataset**: `skills/sdrf-annotate/SKILL.md` — PXD → PRIDE + paper → draft SDRF → validate
+- **Validate an SDRF**: `skills/sdrf-validate/SKILL.md` — template checking + OLS ontology verification
+- **Improve quality**: `skills/sdrf-improve/SKILL.md` — score specificity, completeness, consistency
+- **Fix common errors**: `skills/sdrf-fix/SKILL.md` — UNIMOD swaps, case, format, artifacts
+- **Find ontology terms**: `skills/sdrf-terms/SKILL.md` — column-to-ontology mapping, OLS search
+- **Plan metadata**: `skills/sdrf-brainstorm/SKILL.md` — pre-annotation strategy
+- **Review quality**: `skills/sdrf-review/SKILL.md` — cross-reference with paper + PRIDE
+- **Explain concepts**: `skills/sdrf-explain/SKILL.md` — plain-language SDRF education
+- **Choose pipelines**: `skills/sdrf-convert/SKILL.md` — MaxQuant, DIA-NN, quantms guidance
+- **Analyze design**: `skills/sdrf-design/SKILL.md` — batch effects, confounders, replication
+- **Contribute**: `skills/sdrf-contribute/SKILL.md` — PR to community repository
+- **Tech Refine**: `skills/sdrf-techrefine/SKILL.md` — verify/refine technical metadata from raw files via techsdrf
+
+## Key Rules
+
+1. NEVER guess ontology accessions — always verify via OLS
+2. NEVER invent SDRF column names — use exact format from sdrf-knowledge skill
+3. When a PXD accession is given, ALWAYS fetch project context + publication before annotating
+4. Template selection should happen BEFORE annotation begins
+5. All ontology terms must include both label AND accession (e.g., "breast carcinoma" with EFO:0000305)
+6. Modification parameters must follow NT=;AC=;TA=;MT= format with correct UNIMOD accessions
+
+## Specification Data
+
+The SDRF specification lives in the `spec/` git submodule:
+- **Column definitions**: `spec/sdrf-proteomics/TERMS.tsv` — read for valid column names, ontology routing, allowed values
+- **Template manifest**: `spec/sdrf-proteomics/sdrf-templates/templates.yaml` — read for template inventory and versions
+- **Individual templates**: `spec/sdrf-proteomics/sdrf-templates/{name}/{version}/{name}.yaml`
+
+## Important References
+
+- Column-to-ontology mapping: read TERMS.tsv `values` field for each column
+- Template layers: `skills/sdrf-templates/SKILL.md` (Template Layers section)
+- Common UNIMOD IDs: Acetyl=1, Phospho=21, Carbamidomethyl=4, Oxidation=35, TMT6plex=737
+- Common error: UNIMOD:1 (Acetyl) ↔ UNIMOD:21 (Phospho) swap — most frequent mistake
