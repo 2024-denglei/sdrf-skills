@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'sdrf-skills loaded — SDRF annotation skills active.'",
+            "command": "echo sdrf-skills loaded - SDRF annotation skills active.",
             "async": false
           }
         ]
