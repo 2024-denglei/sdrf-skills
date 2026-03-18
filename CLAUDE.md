@@ -63,3 +63,4 @@ These skills expect the following MCP servers to be available:
 8. Reserved words: "not available", "not applicable" — NEVER "N/A", "NA", "unknown"
 9. Multiple `comment[modification parameters]` columns are normal (one per modification)
 10. Multiple `comment[sdrf template]` columns are normal (one per template)
+11. ALWAYS validate with `parse_sdrf validate-sdrf --sdrf_file X --template Y` before presenting any produced SDRF to the user — update spec first with `git submodule update --remote --recursive`

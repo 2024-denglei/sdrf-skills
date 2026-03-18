@@ -135,13 +135,33 @@ Changes Applied:
 Summary: 15 fixes applied (3 UNIMOD corrections, 5 case fixes, 7 whitespace trims)
 ```
 
-## Step After Fixes: Re-Validate
+## Step After Fixes: Re-Validate with sdrf-pipelines
 
-After applying all fixes, run a quick validation pass:
-1. Check that no new issues were introduced by the fixes
-2. Verify fixed UNIMOD accessions match the NT= modification names
-3. Read `spec/sdrf-proteomics/TERMS.tsv` and check `allow_not_available`/`allow_not_applicable` fields to confirm fixed reserved words are valid for each column
-4. Count: total fixes applied, remaining issues not auto-fixable
+After applying all fixes, **always** run programmatic validation before presenting
+results to the user.
+
+### 1. Update spec to latest version
+```bash
+git submodule update --remote --recursive
+```
+
+### 2. Run sdrf-pipelines validation
+Save the fixed SDRF to a file and validate with the detected templates:
+```bash
+parse_sdrf validate-sdrf \
+  --sdrf_file fixed.sdrf.tsv \
+  --template <template1> \
+  --template <template2>
+```
+Detect templates from `comment[sdrf template]` columns in the SDRF.
+If `parse_sdrf` is not installed, tell the user: `pip install sdrf-pipelines`
+
+### 3. Interpret results
+1. If validation passes → present the changelog + fixed SDRF to the user
+2. If validation finds new errors → fix them and re-run until clean
+3. Verify fixed UNIMOD accessions match the NT= modification names
+4. Read `spec/sdrf-proteomics/TERMS.tsv` and check `allow_not_available`/`allow_not_applicable` fields
+5. Count: total fixes applied, remaining issues not auto-fixable
 
 Present the re-validation summary alongside the changelog.
 

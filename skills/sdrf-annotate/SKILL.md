@@ -200,18 +200,59 @@ Total rows = samples × fractions × label_channels × technical_replicates
 - `comment[sdrf template]` → one column per template: `NT={template_name};VV=v{version}` (versions from templates.yaml)
 - `comment[sdrf annotation tool]` → `manual curation` (or tool name if applicable)
 
-## Step 9: Present and Validate
+## Step 9: Validate with sdrf-pipelines
 
-Present the completed SDRF as a TSV code block and explain:
+Before presenting the SDRF to the user, **always** run programmatic validation
+with `sdrf-pipelines`. This catches errors that manual review misses.
+
+### 9.1 Update spec to latest version
+```bash
+git submodule update --remote --recursive
+```
+
+### 9.2 Save the SDRF to a temporary file
+Write the completed SDRF to a `.sdrf.tsv` file so `parse_sdrf` can validate it.
+
+### 9.3 Run validation with detected templates
+```bash
+parse_sdrf validate-sdrf \
+  --sdrf_file output.sdrf.tsv \
+  --template <template1> \
+  --template <template2>
+```
+Use the templates selected in Step 2. For example, a human DIA study:
+```bash
+parse_sdrf validate-sdrf \
+  --sdrf_file output.sdrf.tsv \
+  --template ms-proteomics \
+  --template human \
+  --template dia-acquisition
+```
+
+If `parse_sdrf` is not installed, tell the user:
+```text
+Install sdrf-pipelines to enable automatic validation:
+  pip install sdrf-pipelines
+```
+
+### 9.4 Fix any validation errors
+If `parse_sdrf` reports errors:
+1. Fix each error in the SDRF
+2. Re-run validation until it passes
+3. Only proceed to Step 10 when validation is clean (or only warnings remain)
+
+## Step 10: Present Results
+
+Present the validated SDRF as a TSV code block and explain:
 - Total rows and columns
 - Sample groups and counts per group
 - Templates applied (with version)
 - File mapping summary
+- Validation result (PASS / warnings)
 - Any values marked as `not available` (ask user to fill)
 - Any values you're uncertain about (flag for user review)
-- Suggest running `sdrf-pipelines validate-sdrf` for programmatic validation
 
-## Step 10: Recommend Community Contribution
+## Step 11: Recommend Community Contribution
 
 If the annotation was for a **ProteomeXchange dataset** (PXD accession):
 

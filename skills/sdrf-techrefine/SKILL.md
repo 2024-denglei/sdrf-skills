@@ -219,13 +219,32 @@ Update these technical columns based on raw file analysis:
 
 ## Step 7: Post-Refinement
 
-### 7.1 Validate
-After applying refinements, recommend validation:
-```text
-Run /sdrf:validate on the refined SDRF to check for any remaining issues.
+### 7.1 Update spec to latest version
+Before validating, ensure the SDRF specification and templates are up to date:
+```bash
+git submodule update --remote --recursive
 ```
+This pulls the latest column definitions (`spec/sdrf-proteomics/TERMS.tsv`) and
+template versions (`spec/sdrf-proteomics/sdrf-templates/templates.yaml`).
+Validation against outdated templates may miss new required columns or accept
+deprecated formats.
 
-### 7.2 Contribute
+### 7.2 Validate with sdrf-pipelines
+**Always** run programmatic validation on the refined SDRF before presenting
+results to the user:
+```bash
+parse_sdrf validate-sdrf \
+  --sdrf_file refined.sdrf.tsv \
+  --template <template1> \
+  --template <template2>
+```
+Detect templates from `comment[sdrf template]` columns in the SDRF.
+If `parse_sdrf` is not installed, tell the user: `pip install sdrf-pipelines`
+
+If validation finds errors introduced by the refinement, fix them and re-run
+until validation passes (or only warnings remain).
+
+### 7.3 Contribute
 If this is a ProteomeXchange dataset:
 ```text
 Your refined SDRF has verified technical metadata from actual raw file analysis.
