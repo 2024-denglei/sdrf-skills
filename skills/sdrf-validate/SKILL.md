@@ -99,7 +99,7 @@ Use TERMS.tsv `values` field to determine which ontology(ies) to search for each
 ### Organism
 ```
 searchClasses(query="<organism>", ontologyId="ncbitaxon")
-Verify: term exists, case is correct (lowercase: "Homo sapiens")
+Verify: term exists, case is correct (Genus capitalized, species lowercase: "Homo sapiens")
 ```
 
 ### Disease
