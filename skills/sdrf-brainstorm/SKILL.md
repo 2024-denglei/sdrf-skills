@@ -63,9 +63,6 @@ Search publications for standard experimental designs:
 
 Search bioRxiv for recent preprints:
   mcp bioRxiv → search_preprints(category="biochemistry" or "cell biology", recent_days=180)
-
-Search Consensus for peer-reviewed evidence:
-  mcp Consensus → search(query="<experimental design question>")
 ```
 
 Present findings:

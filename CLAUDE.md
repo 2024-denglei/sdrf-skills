@@ -6,7 +6,7 @@ SDRF (Sample and Data Relationship Format) annotation in proteomics.
 ## What This Does
 
 14 structured workflows (SKILL.md files) that guide AI assistants through SDRF tasks
-using existing MCP tools (OLS, PRIDE, PubMed, bioRxiv, EuropePMC, Consensus).
+using existing MCP tools (OLS, PRIDE, PubMed, bioRxiv, EuropePMC).
 Instead of guessing at ontology terms or validation rules, skills encode the
 community's annotation expertise as repeatable methodology.
 
@@ -48,8 +48,6 @@ These skills expect the following MCP servers to be available:
 - **PRIDE MCP** — Project metadata, file listings, dataset search, EuropePMC search
 - **PubMed** — Publication metadata, full text from PMC, ID conversion (PMID↔PMCID↔DOI)
 - **bioRxiv** — Preprint search for recent experimental designs
-- **Consensus** — Peer-reviewed evidence search
-- **Open Targets** — Disease-target associations (optional)
 
 ## Key Rules
 
