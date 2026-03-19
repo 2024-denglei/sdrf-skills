@@ -4,9 +4,6 @@ Structured skills that give AI assistants expert-level capabilities for annotati
 validating, improving, and brainstorming proteomics metadata in the
 [SDRF](https://github.com/bigbio/proteomics-metadata-standard) format.
 
-Inspired by [superpowers](https://github.com/obra/superpowers) — structured skills
-that encode community expertise as repeatable workflows, not ad-hoc guesses.
-
 ## What it does
 
 Instead of an AI guessing at ontology terms or SDRF rules, these skills teach it
@@ -104,8 +101,6 @@ This plugin expects the following MCP servers to be configured in your Claude se
 - **PRIDE MCP** — Proteomics dataset repository
 - **PubMed** — Biomedical literature
 - **bioRxiv** — Preprint server
-- **Consensus** — Academic research search
-- **Open Targets** — Disease-target associations
 
 ### Optional CLI tools
 
