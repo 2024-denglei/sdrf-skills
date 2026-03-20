@@ -4,9 +4,6 @@ Structured skills that give AI assistants expert-level capabilities for annotati
 validating, improving, and brainstorming proteomics metadata in the
 [SDRF](https://github.com/bigbio/proteomics-metadata-standard) format.
 
-Inspired by [superpowers](https://github.com/obra/superpowers) — structured skills
-that encode community expertise as repeatable workflows, not ad-hoc guesses.
-
 ## What it does
 
 Instead of an AI guessing at ontology terms or SDRF rules, these skills teach it
@@ -140,11 +137,9 @@ After dependencies are installed (step 2 above):
 For full SDRF annotation (PRIDE, OLS, literature), configure these MCP servers:
 
 - **OLS** — Ontology Lookup Service (EBI)
-- **PRIDE MCP** — Proteomics dataset repository, OLS, EuropePMC
-- **PubMed** — Biomedical literature, PMC full text
-- **bioRxiv** — Preprint server (optional)
-- **Consensus** — Academic research search (optional)
-- **Open Targets** — Disease-target associations (optional)
+- **PRIDE MCP** — Proteomics dataset repository
+- **PubMed** — Biomedical literature
+- **bioRxiv** — Preprint server
 
 The SessionStart hook checks for `parse_sdrf` and recommends `/sdrf:setup` if dependencies are missing.
 
