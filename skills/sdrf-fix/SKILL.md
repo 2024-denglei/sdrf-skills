@@ -9,6 +9,13 @@ argument-hint: "[file path or paste SDRF content]"
 
 You are fixing known common errors in an SDRF file. Apply fixes systematically.
 
+## Step 0: Check parse_sdrf availability
+
+Verify that `parse_sdrf` is available (run `parse_sdrf --version` or `which parse_sdrf`). If it is not installed:
+- Inform the user that re-validation after fixes will need to be done manually
+- Suggest `/sdrf:setup` or `conda env create -f environment.yml && conda activate sdrf-skills` (or `pip install -r requirements.txt`)
+- Continue with the fixes; the user can validate later once dependencies are installed
+
 ## Common Error Patterns and Their Fixes
 
 ### 1. UNIMOD Accession Swaps (45% of all errors)

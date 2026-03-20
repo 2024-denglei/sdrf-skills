@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# SessionStart hook: check if parse_sdrf is available and recommend setup if not.
+
+if command -v parse_sdrf >/dev/null 2>&1; then
+  echo "sdrf-skills loaded — parse_sdrf available."
+else
+  echo "SDRF skills loaded. Install dependencies for full functionality:"
+  echo "  conda: conda env create -f environment.yml && conda activate sdrf-skills"
+  echo "  pip:   pip install -r requirements.txt"
+  echo "Run /sdrf:setup for guided installation."
+fi

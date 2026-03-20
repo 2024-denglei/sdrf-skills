@@ -1,0 +1,9 @@
+# SDRF skills — pip dependencies
+# For Thermo .raw files, thermorawfileparser is not on PyPI; use conda:
+#   conda install -c bioconda thermorawfileparser
+#
+# Install:
+#   pip install -r requirements.txt
+
+sdrf-pipelines[ontology]
+techsdrf

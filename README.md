@@ -16,10 +16,11 @@ guided by the methodology of experienced annotators.
 The SDRF specification data (column definitions, templates) lives in a git submodule
 and is read at runtime — so the skills stay current when the spec evolves.
 
-All 14 skills are under the `sdrf:` namespace. In Claude Code, type `/sdrf:` and autocomplete will show them all.
+All 15 skills are under the `sdrf:` namespace. In Claude Code, type `/sdrf:` and autocomplete will show them all.
 
 | Skill | What it does |
 |-------|-------------|
+| `/sdrf:setup` | Install dependencies (parse_sdrf, techsdrf) — conda or pip guided setup |
 | `/sdrf:knowledge` | Ask about SDRF format, column rules, ontology mappings, reserved words |
 | `/sdrf:templates` | Ask about templates, select templates, understand layers and selection rules |
 | `/sdrf:annotate` | Full annotation workflow: PXD → PRIDE + paper → draft SDRF → validate |
@@ -37,7 +38,7 @@ All 14 skills are under the `sdrf:` namespace. In Claude Code, type `/sdrf:` and
 
 ## Installation
 
-### Clone with submodules (required)
+### 1. Clone with submodules (required)
 
 The SDRF specification data is included as a git submodule. You must initialize it:
 
@@ -55,7 +56,29 @@ To update the spec to the latest version:
 git submodule update --remote --recursive
 ```
 
-### Claude Code (Plugin)
+### 2. Install dependencies (recommended)
+
+Install the Python tools used by the skills. **Conda** is recommended (includes thermorawfileparser for Thermo .raw files):
+
+```bash
+# Recommended (conda):
+conda env create -f environment.yml
+conda activate sdrf-skills
+
+# Or pip:
+pip install -r requirements.txt
+```
+
+For Thermo .raw files, `thermorawfileparser` is not on PyPI — use conda: `conda install -c bioconda thermorawfileparser`.
+
+## Setup by AI Platform
+
+<details>
+<summary>Claude Code (plugin)</summary>
+
+After dependencies are installed (step 2 above):
+
+1. Install the plugin:
 ```bash
 # From the official marketplace (when published):
 /plugin install sdrf-skills
@@ -63,57 +86,67 @@ git submodule update --remote --recursive
 # Or from GitHub:
 /plugin install github:bigbio/sdrf-skills
 ```
+2. Run guided dependency setup: `/sdrf:setup`
+3. Then use: `/sdrf:annotate PXD######` and/or `/sdrf:validate your_file.sdrf.tsv`
 
-### Manual Installation (Claude Code)
-Copy the `skills/` and `spec/` directories to your Claude Code skills path:
-```bash
-cp -r skills/* ~/.claude/skills/
-cp -r spec/ ~/.claude/skills/spec/
-```
+</details>
 
-### Cursor
-The `.cursor/rules/sdrf-skills.mdc` file is included. It activates automatically when
-working with `*.sdrf.tsv` files and references the skill workflows.
+<details>
+<summary>Cursor</summary>
 
-```bash
-# Clone into your project or copy the rules file:
-cp .cursor/rules/sdrf-skills.mdc /your-project/.cursor/rules/
-cp -r skills/ /your-project/skills/
-cp -r spec/ /your-project/spec/
-```
+After dependencies are installed (step 2 above):
 
-### Codex (OpenAI)
-See `.codex/INSTALL.md`. Symlink the skills into your agents path:
-```bash
-ln -s "$(pwd)/skills" ~/.agents/skills/sdrf-skills
-ln -s "$(pwd)/spec" ~/.agents/skills/sdrf-skills/spec
-```
+1. Ensure you have `.cursor/rules/sdrf-skills.mdc` in your project.
+2. Cursor does not run Claude Code's `SessionStart` hook, so ask when needed:
+   - *"Install SDRF dependencies"*
+   - *"Follow the sdrf setup workflow"*
+3. The AI will use `skills/sdrf-setup/SKILL.md` to show the exact `conda` / `pip` commands.
 
-### Gemini CLI
-The `GEMINI.md` file at the project root is automatically picked up by Gemini CLI.
-It references the skill workflows in the `skills/` directory.
+</details>
 
-### OpenCode
-See `.opencode/AGENTS.md`. It provides the skill reference for OpenCode agents.
+<details>
+<summary>Codex (OpenAI)</summary>
 
-## Prerequisites
+After dependencies are installed (step 2 above):
 
-This plugin expects the following MCP servers to be configured in your Claude setup:
+1. Follow `.codex/INSTALL.md` to symlink `skills/` and `spec/` into your Codex agents skills path.
+2. When validation/ontology checks are needed, run `parse_sdrf validate-sdrf` (from `sdrf-pipelines`).
+
+</details>
+
+<details>
+<summary>Gemini CLI</summary>
+
+After dependencies are installed (step 2 above):
+
+1. Gemini CLI auto-loads `GEMINI.md` from the repo root.
+2. When generating SDRF, instruct Gemini to validate with:
+`parse_sdrf validate-sdrf --sdrf_file ... --template ...`
+
+</details>
+
+<details>
+<summary>OpenCode</summary>
+
+After dependencies are installed (step 2 above):
+
+1. Follow `.opencode/AGENTS.md` to wire the skills into your OpenCode agent.
+2. Ask it to consult `skills/sdrf-setup/SKILL.md` if `parse_sdrf` / `techsdrf` are missing.
+
+</details>
+
+### 4. Configure MCP servers
+
+For full SDRF annotation (PRIDE, OLS, literature), configure these MCP servers:
 
 - **OLS** — Ontology Lookup Service (EBI)
-- **PRIDE MCP** — Proteomics dataset repository
-- **PubMed** — Biomedical literature
-- **bioRxiv** — Preprint server
-- **Consensus** — Academic research search
-- **Open Targets** — Disease-target associations
+- **PRIDE MCP** — Proteomics dataset repository, OLS, EuropePMC
+- **PubMed** — Biomedical literature, PMC full text
+- **bioRxiv** — Preprint server (optional)
+- **Consensus** — Academic research search (optional)
+- **Open Targets** — Disease-target associations (optional)
 
-### Optional CLI tools
-
-- **techsdrf** — Raw MS file analysis for refining SDRF technical metadata (`pip install techsdrf`).
-  Used by `/sdrf:techrefine`. Requires ThermoRawFileParser for Thermo .raw files
-  (`conda install -c bioconda thermorawfileparser`).
-
-These provide the real-time data access. The skills provide the methodology.
+The SessionStart hook checks for `parse_sdrf` and recommends `/sdrf:setup` if dependencies are missing.
 
 ## Example Usage
 
@@ -210,7 +243,10 @@ sdrf-skills/
 ├── .cursor/rules/sdrf-skills.mdc # Cursor — rules file (auto-activates on *.sdrf.tsv)
 ├── .codex/INSTALL.md             # Codex — installation instructions
 ├── .opencode/AGENTS.md           # OpenCode — agent reference
-├── hooks/hooks.json              # Claude Code — session initialization
+├── environment.yml               # Conda env (sdrf-pipelines, techsdrf, thermorawfileparser)
+├── requirements.txt              # Pip fallback
+├── hooks/hooks.json              # Claude Code — session init + dependency check
+├── hooks/check-deps.sh           # Checks parse_sdrf, recommends setup
 ├── spec/                         # ← Git submodule: proteomics-metadata-standard
 │   └── sdrf-proteomics/
 │       ├── TERMS.tsv             # Column definitions (read by skills at runtime)
@@ -218,6 +254,7 @@ sdrf-skills/
 │           ├── templates.yaml    # Template manifest (read by skills at runtime)
 │           └── {name}/{ver}/     # Individual template YAMLs
 ├── skills/                       # ← Portable across ALL platforms
+│   ├── sdrf-setup/SKILL.md       # /sdrf:setup — guided dependency installation
 │   ├── sdrf-knowledge/SKILL.md   # /sdrf:knowledge — SDRF spec, columns, ontologies
 │   ├── sdrf-templates/SKILL.md   # /sdrf:templates — template system, layers, selection
 │   ├── sdrf-annotate/SKILL.md    # /sdrf:annotate — full annotation workflow
@@ -240,7 +277,7 @@ sdrf-skills/
 
 ## Cross-Platform Design
 
-The core of this plugin is the `skills/` directory — 14 markdown files that encode
+The core of this plugin is the `skills/` directory — 15 markdown files that encode
 annotation methodology. These are **platform-agnostic**. Each platform just needs a
 thin shim to discover and load them:
 

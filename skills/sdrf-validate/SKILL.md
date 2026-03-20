@@ -9,6 +9,13 @@ argument-hint: "[file path or paste SDRF content]"
 
 You are validating an SDRF file. Perform systematic checks in order.
 
+## Step 0: Check parse_sdrf availability
+
+Verify that `parse_sdrf` is available (run `parse_sdrf --version` or `which parse_sdrf`). If it is not installed:
+- Inform the user that programmatic validation with parse_sdrf will be skipped
+- Suggest `/sdrf:setup` or `conda env create -f environment.yml && conda activate sdrf-skills` (or `pip install -r requirements.txt`)
+- Continue with structural and ontology checks; manual validation is still valuable
+
 ## Step 1: Parse the SDRF
 
 1. Read the SDRF content (from file path or pasted content)
