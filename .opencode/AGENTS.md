@@ -14,6 +14,7 @@ description) followed by a step-by-step workflow in Markdown.
 
 | Skill Directory | What It Does |
 |----------------|-------------|
+| `sdrf-setup` | Install dependencies (parse_sdrf, techsdrf) — conda or pip guided setup |
 | `sdrf-knowledge` | SDRF format rules, column naming, ontology-to-column mapping |
 | `sdrf-templates` | Template layer system (Technology → Organism → Experiment → Clinical → Platform) |
 | `sdrf-annotate` | Full annotation workflow: PXD → PRIDE metadata + publication → SDRF draft |

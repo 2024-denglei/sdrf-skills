@@ -10,6 +10,13 @@ argument-hint: "[PXD accession or experiment description]"
 You are performing a complete SDRF annotation. Follow these steps IN ORDER.
 Do not skip steps. Do not guess — use MCP tools to verify everything.
 
+## Step 0: Check parse_sdrf availability
+
+Before starting, verify that `parse_sdrf` is available (run `parse_sdrf --version` or `which parse_sdrf`). If it is not installed:
+- Inform the user that programmatic validation will be skipped
+- Suggest `/sdrf:setup` or `conda env create -f environment.yml && conda activate sdrf-skills` (or `pip install -r requirements.txt`)
+- Offer to continue with manual checks only, or wait for the user to install and retry
+
 ## Step 1: Gather Project Context
 
 If a **PXD accession** is provided:

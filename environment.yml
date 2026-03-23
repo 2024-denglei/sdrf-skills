@@ -1,0 +1,17 @@
+# SDRF skills — conda environment
+# Recommended for bioinformatics; includes thermorawfileparser for Thermo .raw files
+#
+# Create and activate:
+#   conda env create -f environment.yml
+#   conda activate sdrf-skills
+
+name: sdrf-skills
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python>=3.10
+  - sdrf-pipelines      # parse_sdrf CLI for validation and pipeline conversion
+  - techsdrf            # raw file analysis for /sdrf:techrefine
+  - thermorawfileparser # for Thermo .raw files (optional; techsdrf skips .raw without it)

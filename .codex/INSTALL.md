@@ -2,10 +2,12 @@
 
 ## Installation
 
-First, ensure submodules are initialized (the spec data is required):
+First, ensure submodules are initialized and install dependencies:
 
 ```bash
 git submodule update --init --recursive
+conda env create -f environment.yml && conda activate sdrf-skills
+# Or: pip install -r requirements.txt
 ```
 
 Symlink the skills and spec directories into your Codex agents skills path:
@@ -24,10 +26,11 @@ cp -r spec/ ~/.agents/skills/sdrf-skills/spec/
 
 ## What it provides
 
-14 structured workflows (SKILL.md files) that encode expert-level SDRF annotation methodology:
+15 structured workflows (SKILL.md files) that encode expert-level SDRF annotation methodology:
 
 | Skill | Purpose |
 |-------|---------|
+| sdrf-setup | Install dependencies (parse_sdrf, techsdrf) — conda or pip setup |
 | sdrf-knowledge | SDRF format rules, column names, ontology mappings |
 | sdrf-templates | Template system, layer selection, mutual exclusivity |
 | sdrf-annotate | Full annotation: PXD → PRIDE + paper → draft SDRF |

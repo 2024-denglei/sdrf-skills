@@ -26,6 +26,7 @@ All 14 skills are user-invocable. Type `/sdrf:` and autocomplete will show them 
 
 | Command | Purpose |
 |---------|---------|
+| `/sdrf:setup` | Install dependencies (parse_sdrf, techsdrf) — conda or pip guided setup |
 | `/sdrf:knowledge` | SDRF format rules, column definitions (from TERMS.tsv), ontology routing, modification format, reserved words |
 | `/sdrf:templates` | Template system (from templates.yaml), selection rules, mutual exclusivity, inheritance |
 | `/sdrf:annotate` | Full annotation: PXD → PRIDE + paper → select templates → draft SDRF → validate |
