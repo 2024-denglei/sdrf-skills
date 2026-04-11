@@ -233,7 +233,9 @@ Claude:
 ## Python Tools (`tools/`)
 
 In addition to the markdown skills, the repository includes programmatic Python
-tools for deterministic SDRF analysis — no AI judgment required:
+tools for SDRF analysis:
+
+**Deterministic tools** (no AI, fully reproducible):
 
 ```bash
 # Detect hallucinated ontology terms and UNIMOD swaps
@@ -248,11 +250,19 @@ python -m tools fix your_file.sdrf.tsv -o fixed.sdrf.tsv
 # Benchmark quality across multiple datasets
 python -m tools benchmark PXD000001 PXD012345 local_file.sdrf.tsv
 
-# Cross-validate annotations with multiple AI models
-python -m tools crossval "Human breast cancer TMT proteomics study"
-
 # Verify a single ontology accession against OLS
 python -m tools verify UNIMOD:1 --label Acetyl
+
+# Cell line metadata lookup and SDRF enrichment
+python -m tools cellline lookup HeLa
+python -m tools cellline annotate file.sdrf.tsv -o enriched.tsv
+python -m tools cellline stats
+```
+
+**AI-powered tools** (require API keys, non-deterministic):
+```bash
+# Cross-validate annotations with multiple AI models (Claude, OpenAI, Gemini)
+python -m tools crossval "Human breast cancer TMT proteomics study"
 ```
 
 ### Tool modules

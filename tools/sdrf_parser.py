@@ -76,6 +76,7 @@ class SDRFFile:
     rows: list[dict[str, str]]  # list of {col_key: value}
     raw_headers: list[str]
     col_keys: list[str] = field(default_factory=list)  # disambiguated keys for row dicts
+    warnings: list[str] = field(default_factory=list)  # parse-time warnings
 
     # ---- convenience properties ----
 
@@ -276,6 +277,8 @@ def parse_sdrf(source: str | Path) -> SDRFFile:
         path_obj = Path(source_str)
         if path_obj.is_file():
             text = path_obj.read_text(encoding="utf-8-sig")  # handles BOM
+        elif path_obj.suffix in (".tsv", ".txt", ".sdrf") or "/" in source_str or "\\" in source_str:
+            raise FileNotFoundError(f"SDRF file not found: {source_str}")
         else:
             text = source_str
     else:
@@ -291,7 +294,8 @@ def parse_sdrf(source: str | Path) -> SDRFFile:
 
     if not lines:
         return SDRFFile(path=str(path_obj) if path_obj else None,
-                        columns=[], rows=[], raw_headers=[], col_keys=[])
+                        columns=[], rows=[], raw_headers=[], col_keys=[],
+                        warnings=[])
 
     reader = csv.reader(lines, delimiter="\t")
     raw_headers = next(reader)
@@ -311,11 +315,17 @@ def parse_sdrf(source: str | Path) -> SDRFFile:
         col_keys.append(key)
 
     rows: list[dict[str, str]] = []
-    for row_values in reader:
+    warnings: list[str] = []
+    for row_idx, row_values in enumerate(reader):
         if not any(v.strip() for v in row_values):
             continue  # skip blank rows
-        # Pad short rows with empty strings
-        padded = row_values + [""] * max(0, len(col_keys) - len(row_values))
+        if len(row_values) > len(col_keys):
+            warnings.append(
+                f"Row {row_idx + 1} has {len(row_values)} columns "
+                f"(header has {len(col_keys)}); extra columns truncated"
+            )
+        # Pad short rows with empty strings; truncate wide rows to header width
+        padded = row_values[:len(col_keys)] + [""] * max(0, len(col_keys) - len(row_values))
         rows.append({col_keys[i]: padded[i] for i in range(len(col_keys))})
 
     return SDRFFile(
@@ -324,4 +334,5 @@ def parse_sdrf(source: str | Path) -> SDRFFile:
         rows=rows,
         raw_headers=raw_headers,
         col_keys=col_keys,
+        warnings=warnings,
     )

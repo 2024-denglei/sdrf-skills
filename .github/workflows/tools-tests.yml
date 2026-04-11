@@ -12,6 +12,7 @@ on:
     paths:
       - 'tools/**'
       - 'tests/**'
+      - 'requirements.txt'
 
 jobs:
   test:
@@ -29,19 +30,21 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests pydantic pytest
-          # Don't install sdrf-pipelines or techsdrf in CI — tools don't depend on them
+          pip install requests>=2.28 pydantic>=2.0 pytest
 
       - name: Run tests
         run: |
           python -m pytest tests/ -v --tb=short
 
-      - name: Verify CLI help
+      - name: Verify CLI help (all subcommands)
         run: |
           python -m tools check --help
           python -m tools score --help
           python -m tools fix --help
           python -m tools benchmark --help
+          python -m tools crossval --help
+          python -m tools verify --help
+          python -m tools cellline --help
 
       - name: Run offline hallucination check on synthetic example
         run: |

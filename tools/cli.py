@@ -91,6 +91,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
             print(f"Ontology: {result.resolved_term.ontology_name}")
         if result.message:
             print(f"Message: {result.message}")
+        return 0 if result.exists and result.label_match else 1
     else:
         term = client.resolve_accession(args.accession)
         if term:

@@ -37,6 +37,7 @@ class _BaseClient:
         self._last_request_time = time.time()
 
     def _get(self, endpoint: str, params: dict | None = None) -> dict | list:
+        """Perform a cached, rate-limited GET request."""
         cache_key = f"{self.base_url}{endpoint}|{params}"
         if cache_key in self._cache:
             return self._cache[cache_key]
@@ -78,7 +79,7 @@ class CellosaurusClient(_BaseClient):
                 "q": query,
                 "rows": str(rows),
             })
-        except requests.HTTPError:
+        except requests.RequestException:
             return []
 
         results: list[CellLineInfo] = []
@@ -107,7 +108,7 @@ class CellosaurusClient(_BaseClient):
         """Fetch cell line details by Cellosaurus accession (e.g. CVCL_0030)."""
         try:
             data = self._get(f"/cell-line/{accession}.json")
-        except requests.HTTPError:
+        except requests.RequestException:
             return None
 
         item = data.get("Cellosaurus", {}).get("cell-line-list", [{}])
@@ -152,7 +153,7 @@ class UniProtClient(_BaseClient):
         """Fetch taxonomy info by NCBITaxon ID."""
         try:
             data = self._get(f"/taxonomy/{taxon_id}.json")
-        except requests.HTTPError:
+        except requests.RequestException:
             return None
 
         return OrganismInfo(
@@ -170,7 +171,7 @@ class UniProtClient(_BaseClient):
                 "size": str(rows),
                 "format": "json",
             })
-        except requests.HTTPError:
+        except requests.RequestException:
             return []
 
         results: list[OrganismInfo] = []
@@ -206,7 +207,7 @@ class BioSamplesClient(_BaseClient):
         """Fetch sample metadata by accession (e.g. SAMN12345678)."""
         try:
             data = self._get(f"/{accession}")
-        except requests.HTTPError:
+        except requests.RequestException:
             return None
 
         info = BioSampleInfo(
@@ -261,7 +262,7 @@ class PRIDEClient(_BaseClient):
         """Fetch project metadata by PXD accession."""
         try:
             data = self._get(f"/projects/{accession}")
-        except requests.HTTPError:
+        except requests.RequestException:
             return None
 
         organisms = []
@@ -306,7 +307,7 @@ class PRIDEClient(_BaseClient):
                 "accession": accession,
                 "pageSize": str(page_size),
             })
-        except requests.HTTPError:
+        except requests.RequestException:
             return []
 
         files: list[PRIDEFile] = []
@@ -326,7 +327,7 @@ class PRIDEClient(_BaseClient):
                 "keyword": query,
                 "pageSize": str(page_size),
             })
-        except requests.HTTPError:
+        except requests.RequestException:
             return []
 
         projects: list[PRIDEProject] = []

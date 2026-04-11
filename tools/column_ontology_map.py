@@ -74,15 +74,19 @@ RESERVED_WORDS = {
     "not applicable",
 }
 
-# Common wrong reserved words -> correct
+# Common wrong reserved words -> correct.
+# All ambiguous tokens map to "not available" since the intent is usually
+# "information not captured". Users who mean "not applicable" should write
+# the full phrase.
 WRONG_RESERVED: dict[str, str] = {
-    "n/a": "not applicable",
+    "n/a": "not available",
     "na": "not available",
-    "N/A": "not applicable",
+    "N/A": "not available",
     "NA": "not available",
     "unknown": "not available",
     "null": "not available",
     "none": "not available",
+    "None": "not available",
     "-": "not available",
 }
 
@@ -94,6 +98,8 @@ def get_ontologies_for_column(inner_name: str) -> list[str]:
 
 def try_load_terms_tsv(spec_path: str | Path = "spec/sdrf-proteomics/TERMS.tsv") -> dict[str, list[str]] | None:
     """Try to load column-ontology mappings from TERMS.tsv.
+
+    Handles both the current spec header (``term``) and legacy (``name``).
 
     Returns a dict mapping column inner name -> list of ontology prefixes,
     or None if the file is not available.
@@ -107,8 +113,9 @@ def try_load_terms_tsv(spec_path: str | Path = "spec/sdrf-proteomics/TERMS.tsv")
     with path.open(encoding="utf-8-sig") as f:
         reader = csv.DictReader(f, delimiter="\t")
         for row in reader:
-            name = row.get("name", "").strip()
-            values = row.get("values", "").strip()
+            # Support both "term" (current spec) and "name" (legacy)
+            name = (row.get("term") or row.get("name") or "").strip()
+            values = (row.get("values") or row.get("ontology") or "").strip()
             if name and values:
                 ontologies = [v.strip() for v in values.split(",") if v.strip()]
                 result[name.lower()] = ontologies

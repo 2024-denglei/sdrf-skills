@@ -62,7 +62,8 @@ class OLSClient:
         self._last_request_time = time.time()
 
     def _get(self, endpoint: str, params: dict | None = None) -> dict:
-        cache_key = f"{endpoint}|{params}"
+        """Perform a cached, rate-limited GET request to OLS4."""
+        cache_key = f"{self.base_url}{endpoint}|{params}"
         if cache_key in self._cache:
             return self._cache[cache_key]
         self._rate_limit()

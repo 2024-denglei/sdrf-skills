@@ -210,6 +210,11 @@ class CellLineDatabase:
 
         with db_path.open(encoding="utf-8-sig") as f:
             reader = csv.DictReader(f, delimiter="\t")
+            # Validate required columns
+            required = {"cell line", "organism"}
+            if reader.fieldnames and not required.issubset(set(reader.fieldnames)):
+                missing = required - set(reader.fieldnames)
+                raise ValueError(f"Cell line DB missing required columns: {missing}")
             for row in reader:
                 if curated_only and row.get("curated", "").strip() != "curated":
                     continue
@@ -323,7 +328,15 @@ class CellLineDatabase:
             norm = self._normalize(q)
             if norm not in cache:
                 cache[norm] = self.find(q)
-            results.append(cache[norm])
+            cached = cache[norm]
+            # Preserve the original query text for each result
+            results.append(MatchResult(
+                query=q,
+                entry=cached.entry,
+                match_type=cached.match_type,
+                confidence=cached.confidence,
+                matched_name=cached.matched_name,
+            ))
         return results
 
 
@@ -437,8 +450,10 @@ def estimate_developmental_stage(age_string: str) -> str:
 # CLI
 # ---------------------------------------------------------------------------
 
-def main(argv: list[str] | None = None) -> None:
+def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for cell line database tools."""
     import argparse
+    import sys
 
     parser = argparse.ArgumentParser(
         description="Cell line metadata lookup and SDRF annotation enrichment"
@@ -479,6 +494,7 @@ def main(argv: list[str] | None = None) -> None:
             print(f"Synonyms: {'; '.join(result.entry.synonyms[:10])}")
         else:
             print(f"Cell line '{args.name}' not found in database")
+            return 1
 
     elif args.command == "annotate":
         enriched, report = annotate_sdrf_celllines(args.sdrf_file, db_path=args.db)
@@ -498,17 +514,19 @@ def main(argv: list[str] | None = None) -> None:
             dis = entry.disease
             diseases[dis] = diseases.get(dis, 0) + 1
 
-        print(f"Cell Line Database Statistics")
+        print("Cell Line Database Statistics")
         print(f"  Total entries: {db.size}")
         print(f"  Index size: {len(db._index)} names")
         print(f"  AI synonyms: {len(db._synonyms)}")
-        print(f"\n  Top organisms:")
+        print("\n  Top organisms:")
         for org, count in sorted(organisms.items(), key=lambda x: -x[1])[:5]:
             print(f"    {org}: {count}")
-        print(f"\n  Top diseases:")
+        print("\n  Top diseases:")
         for dis, count in sorted(diseases.items(), key=lambda x: -x[1])[:5]:
             print(f"    {dis}: {count}")
 
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
