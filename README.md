@@ -230,6 +230,45 @@ Claude:
   → Checks specificity: "liver cancer" too generic → use subtype
 ```
 
+## Python Tools (`tools/`)
+
+In addition to the markdown skills, the repository includes programmatic Python
+tools for deterministic SDRF analysis — no AI judgment required:
+
+```bash
+# Detect hallucinated ontology terms and UNIMOD swaps
+python -m tools check your_file.sdrf.tsv
+
+# Score annotation quality (0-100 across 5 dimensions)
+python -m tools score your_file.sdrf.tsv
+
+# Auto-fix common errors (UNIMOD swaps, case, format, reserved words)
+python -m tools fix your_file.sdrf.tsv -o fixed.sdrf.tsv
+
+# Benchmark quality across multiple datasets
+python -m tools benchmark PXD000001 PXD012345 local_file.sdrf.tsv
+
+# Cross-validate annotations with multiple AI models
+python -m tools crossval "Human breast cancer TMT proteomics study"
+
+# Verify a single ontology accession against OLS
+python -m tools verify UNIMOD:1 --label Acetyl
+```
+
+### Tool modules
+
+| Module | Purpose |
+|--------|---------|
+| `tools/sdrf_parser.py` | Lightweight TSV parser with column classification and value parsing |
+| `tools/ols_client.py` | EBI OLS4 REST API client with caching and rate limiting |
+| `tools/hallucination.py` | Ontology hallucination detector (UNIMOD swaps, label mismatches) |
+| `tools/completeness.py` | 5-dimension quality scorer (completeness, specificity, consistency, standards, design) |
+| `tools/sdrf_fixer.py` | Deterministic auto-fixer for 10 common error patterns |
+| `tools/services.py` | REST clients for Cellosaurus, UniProt, BioSamples, PRIDE |
+| `tools/cross_validator.py` | Multi-AI cross-validation (Claude, OpenAI, Gemini) with consensus |
+| `tools/benchmark.py` | Benchmark suite for quality analysis across datasets |
+| `tools/cli.py` | Unified CLI entry point (`python -m tools <command>`) |
+
 ## Architecture
 
 ```text
@@ -248,6 +287,20 @@ sdrf-skills/
 │       └── sdrf-templates/       # ← Nested submodule: sdrf-templates
 │           ├── templates.yaml    # Template manifest (read by skills at runtime)
 │           └── {name}/{ver}/     # Individual template YAMLs
+├── tools/                        # ← Python tools for programmatic analysis
+│   ├── sdrf_parser.py            # TSV parser with duplicate-column handling
+│   ├── ols_client.py             # OLS4 API client
+│   ├── hallucination.py          # Ontology hallucination detector
+│   ├── completeness.py           # 5-dimension quality scorer
+│   ├── sdrf_fixer.py             # Auto-fixer (10 error patterns)
+│   ├── services.py               # External API clients
+│   ├── cross_validator.py        # Multi-AI cross-validation
+│   ├── benchmark.py              # Dataset benchmark suite
+│   ├── column_ontology_map.py    # Column → ontology mappings
+│   └── cli.py                    # Unified CLI
+├── tests/                        # ← pytest test suite (80+ tests)
+├── examples/                     # ← Sample SDRF files for testing
+│   └── PXD_synthetic.sdrf.tsv    # Synthetic example with deliberate errors
 ├── skills/                       # ← Portable across ALL platforms
 │   ├── sdrf-setup/SKILL.md       # /sdrf:setup — guided dependency installation
 │   ├── sdrf-knowledge/SKILL.md   # /sdrf:knowledge — SDRF spec, columns, ontologies
