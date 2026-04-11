@@ -73,8 +73,9 @@ class SDRFFile:
     """Parsed representation of an SDRF file."""
     path: str | None
     columns: list[ColumnInfo]
-    rows: list[dict[str, str]]  # list of {column_name: value}
+    rows: list[dict[str, str]]  # list of {col_key: value}
     raw_headers: list[str]
+    col_keys: list[str] = field(default_factory=list)  # disambiguated keys for row dicts
 
     # ---- convenience properties ----
 
@@ -92,16 +93,31 @@ class SDRFFile:
             return [c.raw_name for c in self.columns]
         return [c.raw_name for c in self.columns if c.col_type == col_type]
 
-    def unique_values(self, column_name: str) -> set[str]:
-        """Return unique non-empty values for a column (case-sensitive)."""
-        return {row[column_name] for row in self.rows if row.get(column_name, "").strip()}
+    def key_for_column(self, index: int) -> str:
+        """Return the disambiguated dict key for column at given index."""
+        if self.col_keys and index < len(self.col_keys):
+            return self.col_keys[index]
+        return self.columns[index].raw_name
+
+    def unique_values(self, col_key: str) -> set[str]:
+        """Return unique non-empty values for a column key (case-sensitive)."""
+        return {row[col_key] for row in self.rows if row.get(col_key, "").strip()}
+
+    def all_keys_for_name(self, raw_name: str) -> list[str]:
+        """Return all disambiguated keys that match a raw column name."""
+        keys = []
+        for i, col in enumerate(self.columns):
+            if col.raw_name == raw_name:
+                keys.append(self.key_for_column(i))
+        return keys
 
     def detected_templates(self) -> list[TemplateParam]:
         """Extract template declarations from comment[sdrf template] columns."""
         templates: list[TemplateParam] = []
-        for col in self.columns:
+        for i, col in enumerate(self.columns):
             if col.col_type == "comment" and col.inner_name.lower() == "sdrf template":
-                for val in self.unique_values(col.raw_name):
+                key = self.key_for_column(i)
+                for val in self.unique_values(key):
                     templates.append(parse_template_value(val))
         return templates
 
@@ -198,9 +214,10 @@ def _auto_detect_templates(sdrf: SDRFFile) -> list[str]:
 
     # Technology type
     tech_values = set()
-    for col in sdrf.columns:
+    for i, col in enumerate(sdrf.columns):
         if col.inner_name.lower() == "technology type":
-            tech_values = {v.lower() for v in sdrf.unique_values(col.raw_name)}
+            key = sdrf.key_for_column(i)
+            tech_values = {v.lower() for v in sdrf.unique_values(key)}
     if "proteomic profiling by mass spectrometry" in tech_values:
         templates.append("ms-proteomics")
     if "protein expression profiling by aptamer array" in tech_values:
@@ -210,9 +227,10 @@ def _auto_detect_templates(sdrf: SDRFFile) -> list[str]:
 
     # Organism
     organism_values = set()
-    for col in sdrf.columns:
+    for i, col in enumerate(sdrf.columns):
         if col.col_type == "characteristics" and col.inner_name.lower() == "organism":
-            organism_values = {v.lower() for v in sdrf.unique_values(col.raw_name)}
+            key = sdrf.key_for_column(i)
+            organism_values = {v.lower() for v in sdrf.unique_values(key)}
     if any("homo sapiens" in v for v in organism_values):
         templates.append("human")
     if any(org in v for v in organism_values for org in ("mus musculus", "rattus", "danio")):
@@ -273,24 +291,37 @@ def parse_sdrf(source: str | Path) -> SDRFFile:
 
     if not lines:
         return SDRFFile(path=str(path_obj) if path_obj else None,
-                        columns=[], rows=[], raw_headers=[])
+                        columns=[], rows=[], raw_headers=[], col_keys=[])
 
     reader = csv.reader(lines, delimiter="\t")
     raw_headers = next(reader)
     columns = [_classify_column(h, i) for i, h in enumerate(raw_headers)]
-    col_names = [c.raw_name for c in columns]
+
+    # Disambiguate duplicate column names (e.g. multiple comment[modification parameters])
+    seen: dict[str, int] = {}
+    col_keys: list[str] = []
+    for col in columns:
+        name = col.raw_name
+        if name in seen:
+            seen[name] += 1
+            key = f"{name}__{seen[name]}"
+        else:
+            seen[name] = 1
+            key = name
+        col_keys.append(key)
 
     rows: list[dict[str, str]] = []
     for row_values in reader:
         if not any(v.strip() for v in row_values):
             continue  # skip blank rows
         # Pad short rows with empty strings
-        padded = row_values + [""] * max(0, len(col_names) - len(row_values))
-        rows.append({col_names[i]: padded[i] for i in range(len(col_names))})
+        padded = row_values + [""] * max(0, len(col_keys) - len(row_values))
+        rows.append({col_keys[i]: padded[i] for i in range(len(col_keys))})
 
     return SDRFFile(
         path=str(path_obj) if path_obj else None,
         columns=columns,
         rows=rows,
         raw_headers=raw_headers,
+        col_keys=col_keys,
     )

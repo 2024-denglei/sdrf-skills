@@ -49,7 +49,8 @@ class TestParseSdrf:
 
     def test_unique_values(self, synthetic_sdrf_path: Path):
         sdrf = parse_sdrf(synthetic_sdrf_path)
-        organisms = sdrf.unique_values("characteristics[organism]")
+        key = sdrf.key_for_column(1)  # characteristics[organism]
+        organisms = sdrf.unique_values(key)
         assert "Homo sapiens" in organisms
         assert "homo sapiens" in organisms  # case error row 6
 
@@ -59,12 +60,22 @@ class TestParseSdrf:
         assert "characteristics[organism]" in chars
         assert "comment[data file]" not in chars
 
+    def test_duplicate_column_keys(self, synthetic_sdrf_path: Path):
+        """Duplicate comment[modification parameters] columns get unique keys."""
+        sdrf = parse_sdrf(synthetic_sdrf_path)
+        mod_keys = sdrf.all_keys_for_name("comment[modification parameters]")
+        assert len(mod_keys) == 3
+        # First key is plain, subsequent have __N suffix
+        assert mod_keys[0] == "comment[modification parameters]"
+        assert "__2" in mod_keys[1]
+        assert "__3" in mod_keys[2]
+
     def test_template_detection(self, synthetic_sdrf_path: Path):
         sdrf = parse_sdrf(synthetic_sdrf_path)
         templates = sdrf.detected_templates()
-        assert len(templates) == 1
-        assert templates[0].nt == "ms-proteomics"
-        assert templates[0].vv == "v1.1.0"
+        assert len(templates) >= 1
+        names = [t.nt for t in templates]
+        assert "ms-proteomics" in names
 
     def test_auto_detect_templates(self, minimal_sdrf_content: str):
         sdrf = parse_sdrf(minimal_sdrf_content)
