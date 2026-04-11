@@ -106,6 +106,45 @@ def cmd_verify(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_cellline(args: argparse.Namespace) -> int:
+    from tools.cellline_db import CellLineDatabase, annotate_sdrf_celllines
+    from pathlib import Path
+
+    if args.cellline_command == "lookup":
+        db = CellLineDatabase()
+        db.load(args.db)
+        result = db.find(args.name)
+        if result.entry:
+            e = result.entry
+            print(f"Cell line: {e.cell_line}")
+            print(f"Match: {result.match_type} (confidence: {result.confidence:.2f})")
+            print(f"Cellosaurus: {e.cellosaurus_name} ({e.cellosaurus_accession})")
+            print(f"Organism: {e.organism}")
+            print(f"Disease: {e.disease}")
+            print(f"Tissue: {e.organism_part}")
+            print(f"Cell type: {e.cell_type}")
+            print(f"Age: {e.age}, Sex: {e.sex}")
+            if e.synonyms:
+                print(f"Synonyms: {'; '.join(e.synonyms[:10])}")
+        else:
+            print(f"'{args.name}' not found in database")
+            return 1
+
+    elif args.cellline_command == "annotate":
+        enriched, report = annotate_sdrf_celllines(args.sdrf_file, db_path=args.db)
+        print(report.summary())
+        if args.output:
+            Path(args.output).write_text(enriched)
+            print(f"\nEnriched SDRF written to: {args.output}")
+
+    elif args.cellline_command == "stats":
+        db = CellLineDatabase()
+        db.load(args.db)
+        print(f"Cell Line Database: {db.size} entries, {len(db._index)} indexed names")
+
+    return 0
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="python -m tools",
@@ -143,7 +182,25 @@ def main() -> None:
     p.add_argument("accession", help="e.g. UNIMOD:1, MS:1001911")
     p.add_argument("--label", help="Expected label to verify against")
 
+    # cellline
+    p = subparsers.add_parser("cellline", help="Cell line metadata lookup and annotation")
+    cl_sub = p.add_subparsers(dest="cellline_command", required=True)
+    cl_lookup = cl_sub.add_parser("lookup", help="Look up a cell line")
+    cl_lookup.add_argument("name", help="Cell line name (e.g. HeLa, MCF-7)")
+    cl_lookup.add_argument("--db", default=None)
+    cl_annotate = cl_sub.add_parser("annotate", help="Annotate SDRF with cell line metadata")
+    cl_annotate.add_argument("sdrf_file")
+    cl_annotate.add_argument("-o", "--output")
+    cl_annotate.add_argument("--db", default=None)
+    cl_stats = cl_sub.add_parser("stats", help="Database statistics")
+    cl_stats.add_argument("--db", default=None)
+
     args = parser.parse_args()
+
+    # Set default db path for cellline commands
+    if args.command == "cellline" and hasattr(args, "db") and args.db is None:
+        from tools.cellline_db import DEFAULT_DB_PATH
+        args.db = str(DEFAULT_DB_PATH)
 
     commands = {
         "check": cmd_check,
@@ -151,6 +208,7 @@ def main() -> None:
         "fix": cmd_fix,
         "benchmark": cmd_benchmark,
         "crossval": cmd_crossval,
+        "cellline": cmd_cellline,
         "verify": cmd_verify,
     }
 
