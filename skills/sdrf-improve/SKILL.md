@@ -1,150 +1,113 @@
 ---
 name: sdrf:improve
-description: Use when the user wants to improve an existing SDRF file, make it more complete, more specific, or higher quality. Triggers on requests to improve, enhance, or review SDRF quality.
+description: Use when the user wants to improve an existing SDRF file strictly according to SDRF templates and specification rules (no speculative additions).
 user-invocable: true
 argument-hint: "[file path or paste SDRF content]"
 ---
 
-# SDRF Improvement Workflow
+# SDRF Specification-Driven Improvement Workflow
 
-You are analyzing an SDRF file to suggest improvements beyond basic validation.
+You are improving an SDRF file using ONLY specification/template rules.
 
-## Step 1: Understand the Experiment
+Do not suggest additions based on:
+- Similar datasets in PRIDE
+- Literature expectations not encoded in templates
+- "Could be more detailed" heuristics
+- Personal curator preference
 
-1. Read the SDRF content
-2. Identify: organism, disease/condition, tissue, technology, label type
-3. Detect which templates should apply (see sdrf-templates skill)
-4. If a PXD accession is available → fetch PRIDE project context + publication for richer analysis
+If a change is not justified by template metadata (`required`/`recommended`) or
+TERMS.tsv rules, do not recommend it.
 
-## Step 2: Assess Quality Dimensions
+## Authoritative Sources (must read)
 
-Evaluate the file on these 5 dimensions (score each 0-100):
+1. `spec/sdrf-proteomics/TERMS.tsv`
+2. `spec/sdrf-proteomics/sdrf-templates/templates.yaml`
+3. `spec/sdrf-proteomics/sdrf-templates/{name}/{version}/{name}.yaml` for each template in use
 
-### A. Completeness (are all useful columns present?)
-- Read `spec/sdrf-proteomics/TERMS.tsv` and filter by detected template names in the `usage` column
-- Are all REQUIRED columns for the detected templates present?
-- Which RECOMMENDED columns are missing? (check individual template YAMLs for requirement levels)
-- Which OPTIONAL columns would add value for this experiment type?
-- Search for similar experiments in PRIDE to see what columns peers include:
-  ```text
-  mcp PRIDE → search_extensive(query="<organism> <disease> <technology>")
-  ```
+For affinity-proteomics, align with the official template/spec rules:
+- Technology template: `affinity-proteomics`
+- Optional experiment child template: `olink` OR `somascan` (mutually exclusive)
 
-### B. Specificity (are ontology terms precise enough?)
-For each ontology-controlled column:
-- Is the term specific enough for the experiment context?
-- Could a more precise child term be used?
-  ```text
-  mcp OLS → getChildren(ontologyId="<ont>", classIri="<iri>")
-  ```
-- Examples of insufficient specificity:
-  - "cancer" → should be "breast invasive carcinoma"
-  - "brain" → could be "temporal cortex" if the paper specifies
-  - "blood" → could be "plasma" or "serum" if known
-- For technical columns (instrument, tolerances, modifications), specificity can be
-  verified with `/sdrf:techrefine` — techsdrf detects exact instrument models and
-  tolerances from raw files, replacing generic values with precise ones
+## Step 1: Determine Active Templates
 
-### C. Consistency (are values uniform across the file?)
-- Case consistency: "Male" vs "male" vs "MALE"
-- Format consistency: "58Y" vs "58 years" vs "58"
-- Naming consistency: same sample described differently in different rows
-- Ontology consistency: mixing EFO and MONDO for the same column
+1. Parse `comment[sdrf template]` columns (NT/VV format).
+2. If missing/incomplete, detect from SDRF content and technology type.
+3. Confirm template set with the user before proposing edits.
 
-### D. Standards Compliance
-- Read `spec/sdrf-proteomics/sdrf-templates/templates.yaml` for latest template versions
-- Using latest template version?
-- SDRF metadata columns present? (`comment[sdrf version]`, `comment[sdrf template]`)
-- Modification format correct? (NT=;AC=;TA=;MT=)
-- Reserved words used correctly? ("not available" not "N/A")
-- Age format correct? ("58Y" not "58 years")
+Do not "upgrade" template versions automatically. If a newer version exists, report it as an optional migration task.
 
-### E. Experimental Design Clarity
-- Are factor values defined?
-- Do factor values match a characteristics column?
-- Is the experimental comparison clear from the SDRF alone?
-- Are biological replicates numbered correctly?
-- Are technical replicates identified?
+## Step 2: Build Rule Matrix
 
-## Step 3: Search for Improvement Context
+Construct an explicit checklist from template YAML files:
+- Required columns
+- Recommended columns
+- Optional columns
+- Column validators (values/patterns/ontology)
+- Allowed reserved words (`not available`, `not applicable`, `pooled`) via TERMS.tsv flags
 
-Use MCP tools to gather improvement suggestions:
+For affinity-proteomics specifically, ensure checks include:
+- `comment[platform]` (required)
+- `comment[panel name]` (recommended)
+- `comment[quantification unit]` (optional; values include NPX/RFU in spec)
+- `comment[normalization method]` (optional)
+- `comment[fraction identifier]` (optional)
 
-1. **Similar datasets**: Search PRIDE for well-annotated similar experiments
-   ```text
-   mcp PRIDE → fetch_projects(keyword="<organism> <tissue> <technology>")
-   ```
+And for child templates:
+- Olink: check Olink-specific required/recommended columns from `olink.yaml`
+- SomaScan: check SomaScan-specific required/recommended columns from `somascan.yaml`
 
-2. **Better ontology terms**: For each term, check if a more specific child exists
-   ```text
-   mcp OLS → getChildren(ontologyId="<ont>", classIri="<current_term_iri>")
-   ```
+## Step 3: Identify Spec-Backed Improvements
 
-3. **Missing columns**: Check what columns similar experiments include
-   - If human study without `characteristics[age]` → recommend adding
-   - If TMT without proper channel labeling → recommend fixing
-   - If DIA without `dia-acquisition` template columns → recommend
+Classify findings into these categories only:
 
-4. **Literature context** (if PXD available):
-   - Does the paper mention metadata not captured in the SDRF?
-   - Are there demographic details (age, sex) in the paper but not the SDRF?
+### A. Required Fixes (must change)
+- Missing required columns from active templates
+- Invalid column names not matching SDRF naming patterns
+- Values violating template/TERMS validators
+- Invalid reserved words per TERMS flags
 
-## Step 4: Generate Improvement Report
+### B. Recommended Fixes (should change)
+- Missing columns marked `recommended` in active templates
+- Values that fail recommended validators (warnings)
 
-Present improvements organized by priority:
+### C. Optional Enhancements (may change)
+- Missing optional columns from active templates
+- Only include if explicitly present in template metadata
 
-### HIGH Priority (should fix)
-Issues that affect data reuse or analysis pipeline compatibility.
-- Missing required columns
-- Wrong ontology accessions
-- Missing factor values
-- Incorrect modification format
+Do not include free-form "quality" recommendations outside A/B/C.
 
-### MEDIUM Priority (recommended)
-Issues that affect metadata quality and findability.
-- Terms that could be more specific
-- Missing recommended columns (age, sex for human studies)
-- Inconsistent formatting
-- Missing SDRF metadata columns
+## Step 4: Generate Deterministic Report
 
-### LOW Priority (nice to have)
-Issues that improve completeness but aren't critical.
-- Missing optional columns that similar experiments include
-- Adding developmental stage, ancestry for human studies
-- More detailed sample descriptions
+Report every finding with source traceability:
+- Column or value issue
+- Severity (`required` / `recommended` / `optional`)
+- Exact source rule:
+  - template file + column definition, or
+  - TERMS.tsv field (usage/values/allow_not_available/allow_not_applicable/allow_pooled)
+- Proposed correction
 
-### Quality Score
-
-Calculate the overall score as a weighted average of the 5 dimensions:
-
+Example format:
 ```text
-Overall = (Completeness × 0.30) + (Specificity × 0.25) + (Consistency × 0.15)
-        + (Standards × 0.15) + (Design × 0.15)
+Finding: Missing column `comment[panel name]`
+Severity: recommended
+Source: spec/sdrf-proteomics/sdrf-templates/affinity-proteomics/1.0.0/affinity-proteomics.yaml
+Action: Add `comment[panel name]` with panel identifier values.
 ```
 
-Scoring guide per dimension:
-- **90-100**: Excellent — meets or exceeds community best practices
-- **70-89**: Good — functional but has room for improvement
-- **50-69**: Needs work — missing important metadata or has significant issues
-- **0-49**: Poor — major structural or semantic problems
+## Step 5: Apply Changes Only with User Approval
 
-Present the score:
-```text
-Quality Score: 72/100
+Before modifying file contents:
+1. Show the exact changes (old -> new)
+2. Group by severity (required first)
+3. Ask user approval for recommended/optional changes
 
-  Completeness:  85/100 ████████░░ — Missing: cell type, developmental stage
-  Specificity:   60/100 ██████░░░░ — "cancer" should be more specific
-  Consistency:   90/100 █████████░ — Minor case mismatch in 2 rows
-  Standards:     55/100 █████░░░░░ — Not using latest template, missing metadata columns
-  Design:        70/100 ███████░░░ — Factor values defined but replication unclear
+Required fixes can be applied directly if the user asked to "fix all required issues."
 
-  Weighted: (85×0.30)+(60×0.25)+(90×0.15)+(55×0.15)+(70×0.15) = 72.25 → 72/100
-```
+## Output Constraints
 
-## Step 5: Offer to Fix
+- No speculative metadata additions
+- No PRIDE peer comparison suggestions
+- No literature-derived additions unless already required/recommended by templates
+- No ontology "more specific child" suggestions unless validator explicitly requires a value constraint
 
-For each improvement, offer to make the change:
-- Show the current value → proposed value
-- Explain WHY the change improves the SDRF
-- Let the user approve/reject each change
-- Generate the corrected SDRF as a TSV code block
+The goal is strict conformance improvement, not curation enrichment.

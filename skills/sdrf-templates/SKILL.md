@@ -155,7 +155,7 @@ When an SDRF file already exists, detect templates from:
 8. **Single cell columns**: `characteristics[single cell isolation protocol]` → single-cell
 9. **Environmental columns**: `characteristics[environmental sample type]` → metaproteomics
 10. **Oncology columns**: `characteristics[tumor grading]` → oncology-metadata
-11. **Olink columns**: `comment[olink panel]` → olink
+11. **Olink columns**: `comment[panel name]` (or legacy `comment[olink panel]`) → olink
 12. **SomaScan columns**: `comment[somascan menu]` → somascan
 
 ## How to Respond to User Queries
