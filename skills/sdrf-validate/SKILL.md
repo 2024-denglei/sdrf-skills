@@ -44,7 +44,7 @@ Verify that `parse_sdrf` is available (run `parse_sdrf --version` or `which pars
 | `characteristics[single cell isolation protocol]` present | single-cell |
 | `characteristics[environmental sample type]` present | metaproteomics |
 | `characteristics[tumor grading]` or `characteristics[tumor stage]` | oncology-metadata |
-| `comment[olink panel]` present | olink |
+| `comment[panel name]` or `comment[olink panel]` present | olink |
 | `comment[somascan menu]` present | somascan |
 
 3. Report detected templates to user
