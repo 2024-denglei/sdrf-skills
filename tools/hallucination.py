@@ -10,16 +10,14 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 from tools.column_ontology_map import (
     COLUMN_ONTOLOGY_MAP,
     UNIMOD_KNOWN,
     UNIMOD_SWAPS,
-    get_ontologies_for_column,
     try_load_terms_tsv,
 )
-from tools.ols_client import OLSClient, OLSTerm
+from tools.ols_client import OLSClient
 from tools.sdrf_parser import (
     SDRFFile,
     parse_modification,
