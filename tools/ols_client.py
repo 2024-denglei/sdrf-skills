@@ -124,7 +124,7 @@ class OLSClient:
         encoded_iri = urllib.parse.quote(urllib.parse.quote(iri, safe=""))
         try:
             data = self._get(f"/ontologies/{ontology_id.lower()}/terms/{encoded_iri}")
-        except requests.HTTPError:
+        except requests.RequestException:
             return None
 
         return self._api_term_to_term(data)
