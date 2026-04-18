@@ -5,5 +5,15 @@
 # Install:
 #   pip install -r requirements.txt
 
+# SDRF validation and raw file analysis
 sdrf-pipelines[ontology]
 techsdrf
+
+# Tools dependencies (tools/ package)
+requests>=2.28
+pydantic>=2.0
+
+# Optional: AI cross-validation backends (only needed for `python -m tools crossval`)
+# anthropic         # Claude API
+# openai            # OpenAI API
+# google-generativeai  # Gemini API
