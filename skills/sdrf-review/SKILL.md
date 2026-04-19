@@ -127,4 +127,4 @@ Provide clear next steps:
 4. Suggest running final validation after fixes
 5. If the SDRF is for a ProteomeXchange dataset and the verdict is VALID or NEEDS MINOR FIXES:
    suggest contributing the annotation via `/sdrf:contribute {PXD}` to the
-   `proteomics-sample-metadata` community repository
+   `sdrf-annotated-datasets` community repository

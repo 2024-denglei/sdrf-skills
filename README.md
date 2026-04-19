@@ -238,11 +238,11 @@ Claude:
 You: /sdrf:contribute PXD045678
 
 Claude:
-  → Checks if PXD045678 already exists in annotated-projects/
+  → Checks if PXD045678 already exists in datasets/
   → Validates the SDRF file
-  → Forks bigbio/proteomics-sample-metadata
+  → Forks bigbio/sdrf-annotated-datasets
   → Creates branch annotation/PXD045678
-  → Commits the SDRF file to annotated-projects/PXD045678/
+  → Commits the SDRF file to datasets/PXD045678/
   → Opens a PR with dataset summary (organism, templates, row count)
 ```
 
