@@ -373,7 +373,11 @@ To add a new skill:
 
 Maintained by the [BigBio](https://github.com/bigbio) team.
 
-- **Yasset Perez-Riverol** — [@ypriverol](https://github.com/ypriverol) · [ypriverol@gmail.com](mailto:ypriverol@gmail.com) · [@ypriverol](https://twitter.com/ypriverol)
+- **Yasset Perez-Riverol** (maintainer) — [@ypriverol](https://github.com/ypriverol) · [ypriverol@gmail.com](mailto:ypriverol@gmail.com) · [@ypriverol](https://twitter.com/ypriverol)
+
+### Contributors
+
+- **Asier Larrea Sebal** — [@asierlarrea](https://github.com/asierlarrea) · EMBL-EBI
 
 For questions about the SDRF specification itself, open an issue in
 [bigbio/proteomics-metadata-standard](https://github.com/bigbio/proteomics-metadata-standard).
