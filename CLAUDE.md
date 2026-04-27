@@ -22,7 +22,7 @@ Skills read these files at runtime. When the spec changes, run `git submodule up
 
 ## Available Skills (all under `sdrf:` namespace)
 
-All 14 skills are user-invocable. Type `/sdrf:` and autocomplete will show them all.
+All 16 skills are user-invocable. Type `/sdrf:` and autocomplete will show them all.
 
 | Command | Purpose |
 |---------|---------|
@@ -41,6 +41,7 @@ All 14 skills are user-invocable. Type `/sdrf:` and autocomplete will show them 
 | `/sdrf:design` | Experimental design: batch effects, confounders, replication, MSstats contrasts |
 | `/sdrf:contribute` | Contribute annotated SDRF back to sdrf-annotated-datasets via PR (automated or guided) |
 | `/sdrf:techrefine` | Verify/refine technical metadata (instrument, tolerances, mods, DDA/DIA) from raw files via techsdrf |
+| `/sdrf:cellline` | Look up cell lines via Cellosaurus (REST API or bulk file) and translate them into SDRF cell-line columns (organism, disease, sampling site, sex, ancestry, age) |
 
 ## MCP Servers Used
 

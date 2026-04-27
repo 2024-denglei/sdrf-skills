@@ -10,7 +10,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 [![SDRF Spec](https://img.shields.io/badge/SDRF-proteomics--metadata--standard-orange)](https://github.com/bigbio/proteomics-metadata-standard)
-[![Skills](https://img.shields.io/badge/skills-15-informational)](#available-skills)
+[![Skills](https://img.shields.io/badge/skills-16-informational)](#available-skills)
 [![PRIDE](https://img.shields.io/badge/data-PRIDE-2C7BB6)](https://www.ebi.ac.uk/pride/)
 [![Ontologies](https://img.shields.io/badge/ontologies-OLS-7E57C2)](https://www.ebi.ac.uk/ols4/)
 
@@ -53,7 +53,7 @@ and is read at runtime — so the skills stay current when the spec evolves.
 
 ## Available skills
 
-All 15 skills are under the `sdrf:` namespace. In Claude Code, type `/sdrf:` and autocomplete will show them all.
+All 16 skills are under the `sdrf:` namespace. In Claude Code, type `/sdrf:` and autocomplete will show them all.
 
 | Skill | What it does |
 |-------|-------------|
@@ -72,6 +72,7 @@ All 15 skills are under the `sdrf:` namespace. In Claude Code, type `/sdrf:` and
 | `/sdrf:design` | Detect batch effects, confounders, replication issues |
 | `/sdrf:contribute` | Contribute annotated SDRF back to sdrf-annotated-datasets via PR |
 | `/sdrf:techrefine` | Verify/refine technical metadata from raw files via techsdrf |
+| `/sdrf:cellline` | Translate Cellosaurus records into SDRF cell-line columns (organism, disease, sampling site, sex, ancestry) |
 
 ## Installation
 
@@ -303,7 +304,8 @@ sdrf-skills/
 │   ├── sdrf-contribute/SKILL.md   # /sdrf:contribute — PR to community repo
 │   ├── sdrf-convert/SKILL.md     # /sdrf:convert — pipeline guidance
 │   ├── sdrf-design/SKILL.md      # /sdrf:design — experimental design analysis
-│   └── sdrf-techrefine/SKILL.md   # /sdrf:techrefine — techsdrf raw file refinement
+│   ├── sdrf-techrefine/SKILL.md  # /sdrf:techrefine — techsdrf raw file refinement
+│   └── sdrf-cellline/SKILL.md    # /sdrf:cellline — Cellosaurus → SDRF translation
 ├── CLAUDE.md                     # Claude Code — project config
 ├── GEMINI.md                     # Gemini CLI — project config
 ├── BRAINSTORM.md                 # Design document
