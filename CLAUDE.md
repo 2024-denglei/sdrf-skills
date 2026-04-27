@@ -39,7 +39,7 @@ All 14 skills are user-invocable. Type `/sdrf:` and autocomplete will show them 
 | `/sdrf:explain` | Explain any SDRF column, error, or concept in plain language |
 | `/sdrf:convert` | Pipeline selection (MaxQuant, DIA-NN, OpenMS, quantms) + conversion commands |
 | `/sdrf:design` | Experimental design: batch effects, confounders, replication, MSstats contrasts |
-| `/sdrf:contribute` | Contribute annotated SDRF back to proteomics-sample-metadata via PR (automated or guided) |
+| `/sdrf:contribute` | Contribute annotated SDRF back to sdrf-annotated-datasets via PR (automated or guided) |
 | `/sdrf:techrefine` | Verify/refine technical metadata (instrument, tolerances, mods, DDA/DIA) from raw files via techsdrf |
 
 ## MCP Servers Used

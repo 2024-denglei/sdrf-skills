@@ -70,7 +70,7 @@ All 15 skills are under the `sdrf:` namespace. In Claude Code, type `/sdrf:` and
 | `/sdrf:explain` | Explain any column, error, or concept in plain language |
 | `/sdrf:convert` | Choose and configure analysis pipelines from SDRF |
 | `/sdrf:design` | Detect batch effects, confounders, replication issues |
-| `/sdrf:contribute` | Contribute annotated SDRF back to community via PR |
+| `/sdrf:contribute` | Contribute annotated SDRF back to sdrf-annotated-datasets via PR |
 | `/sdrf:techrefine` | Verify/refine technical metadata from raw files via techsdrf |
 
 ## Installation
@@ -238,11 +238,11 @@ Claude:
 You: /sdrf:contribute PXD045678
 
 Claude:
-  → Checks if PXD045678 already exists in annotated-projects/
+  → Checks if PXD045678 already exists in datasets/
   → Validates the SDRF file
-  → Forks bigbio/proteomics-sample-metadata
+  → Forks bigbio/sdrf-annotated-datasets
   → Creates branch annotation/PXD045678
-  → Commits the SDRF file to annotated-projects/PXD045678/
+  → Commits the SDRF file to datasets/PXD045678/
   → Opens a PR with dataset summary (organism, templates, row count)
 ```
 
