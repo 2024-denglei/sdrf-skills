@@ -5,8 +5,10 @@ Usage:
   python -m tools score <file.sdrf.tsv>           # quality scoring
   python -m tools fix <file.sdrf.tsv> [-o out]    # auto-fix
   python -m tools benchmark <PXD1> <file2> ...    # benchmark suite
-  python -m tools crossval <project_info>         # cross-validate
-  python -m tools verify <ACCESSION> [--label L]  # verify single term
+  python -m tools crossval <project_info>          # cross-validate
+  python -m tools verify <ACCESSION> [--label L]   # verify single term
+  python -m tools cellline lookup <name>           # curated cell line lookup
+  python -m tools cellosaurus lookup <name>        # full Cellosaurus lookup
 """
 
 from __future__ import annotations
@@ -146,6 +148,71 @@ def cmd_cellline(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_cellosaurus(args: argparse.Namespace) -> int:
+    from tools.cellosaurus_db import CellosaurusDatabase, format_entry_display, format_entry_tsv
+
+    if args.cellosaurus_command == "lookup":
+        db = CellosaurusDatabase()
+        db.load(args.db)
+        result = db.find(args.name)
+        if result.entry:
+            if args.format == "tsv":
+                print(format_entry_tsv(result.entry))
+            else:
+                print(format_entry_display(result.entry, result))
+        else:
+            print(f"Cell line '{args.name}' not found in database")
+            return 1
+
+    elif args.cellosaurus_command == "stats":
+        db = CellosaurusDatabase()
+        db.load(args.db)
+        print(f"Cellosaurus Database: {db.size} entries, {len(db._name_index)} indexed names")
+
+    elif args.cellosaurus_command == "search":
+        from tools.cellosaurus_db import CellosaurusDatabase
+        import difflib
+        db = CellosaurusDatabase()
+        db.load(args.db)
+        results = []
+        for accession, entry in db.entries.items():
+            match_name = entry.cell_line or entry.cellosaurus_name or ""
+            norm = db._normalize(match_name)
+            if db._normalize(args.keyword) in norm or norm in db._normalize(args.keyword):
+                ratio = difflib.SequenceMatcher(None, db._normalize(args.keyword), norm).ratio()
+                results.append((ratio, entry))
+            else:
+                for syn in entry.synonyms + entry.synonyms_by_cellosaurus:
+                    norm_syn = db._normalize(syn)
+                    if db._normalize(args.keyword) in norm_syn or norm_syn in db._normalize(args.keyword):
+                        ratio = difflib.SequenceMatcher(None, db._normalize(args.keyword), norm_syn).ratio()
+                        results.append((ratio, entry))
+                        break
+        seen = set()
+        unique_results = []
+        for ratio, entry in sorted(results, key=lambda x: -x[0]):
+            acc = entry.cellosaurus_accession
+            if acc not in seen:
+                seen.add(acc)
+                unique_results.append((ratio, entry))
+        if not unique_results:
+            print(f"No results found for '{args.keyword}'")
+            return 1
+        print(f"Found {len(unique_results)} results for '{args.keyword}':\n")
+        for ratio, entry in unique_results[:args.limit]:
+            accession = entry.cellosaurus_accession
+            name = entry.cell_line if entry.cell_line != "not available" else entry.cellosaurus_name
+            disease = entry.disease if entry.disease != "not available" else ""
+            print(f"  {name} ({accession})")
+            print(f"    Organism: {entry.organism}")
+            if disease:
+                print(f"    Disease: {disease}")
+            print(f"    Match confidence: {ratio:.2f}")
+            print()
+
+    return 0
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="python -m tools",
@@ -184,7 +251,7 @@ def main() -> None:
     p.add_argument("--label", help="Expected label to verify against")
 
     # cellline
-    p = subparsers.add_parser("cellline", help="Cell line metadata lookup and annotation")
+    p = subparsers.add_parser("cellline", help="Cell line metadata lookup and annotation (curated subset)")
     cl_sub = p.add_subparsers(dest="cellline_command", required=True)
     cl_lookup = cl_sub.add_parser("lookup", help="Look up a cell line")
     cl_lookup.add_argument("name", help="Cell line name (e.g. HeLa, MCF-7)")
@@ -196,12 +263,33 @@ def main() -> None:
     cl_stats = cl_sub.add_parser("stats", help="Database statistics")
     cl_stats.add_argument("--db", default=None)
 
+    # cellosaurus
+    p = subparsers.add_parser("cellosaurus",
+                              help="Full Cellosaurus database lookup (all ontology accessions)")
+    cs_sub = p.add_subparsers(dest="cellosaurus_command", required=True)
+    cs_lookup = cs_sub.add_parser("lookup", help="Look up a cell line by name or accession")
+    cs_lookup.add_argument("name", help="Cell line name or accession (e.g. HeLa, CVCL_0030)")
+    cs_lookup.add_argument("--db", default=None)
+    cs_lookup.add_argument("--format", choices=["text", "tsv"], default="text",
+                            help="Output format (default: text)")
+    cs_stats = cs_sub.add_parser("stats", help="Show database statistics")
+    cs_stats.add_argument("--db", default=None)
+    cs_search = cs_sub.add_parser("search", help="Search cell lines by keyword")
+    cs_search.add_argument("keyword", help="Keyword to search for")
+    cs_search.add_argument("--db", default=None)
+    cs_search.add_argument("--limit", type=int, default=10, help="Max results to show")
+
     args = parser.parse_args()
 
     # Set default db path for cellline commands
     if args.command == "cellline" and hasattr(args, "db") and args.db is None:
         from tools.cellline_db import DEFAULT_DB_PATH
         args.db = str(DEFAULT_DB_PATH)
+
+    # Set default db path for cellosaurus commands
+    if args.command == "cellosaurus" and hasattr(args, "db") and args.db is None:
+        from tools.cellosaurus_db import DEFAULT_CELLOSAURUS_PATH
+        args.db = str(DEFAULT_CELLOSAURUS_PATH)
 
     commands = {
         "check": cmd_check,
@@ -210,6 +298,7 @@ def main() -> None:
         "benchmark": cmd_benchmark,
         "crossval": cmd_crossval,
         "cellline": cmd_cellline,
+        "cellosaurus": cmd_cellosaurus,
         "verify": cmd_verify,
     }
 
