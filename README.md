@@ -70,7 +70,7 @@ All 15 skills are under the `sdrf:` namespace. In Claude Code, type `/sdrf:` and
 | `/sdrf:explain` | Explain any column, error, or concept in plain language |
 | `/sdrf:convert` | Choose and configure analysis pipelines from SDRF |
 | `/sdrf:design` | Detect batch effects, confounders, replication issues |
-| `/sdrf:contribute` | Contribute annotated SDRF back to community via PR |
+| `/sdrf:contribute` | Contribute annotated SDRF back to sdrf-annotated-datasets via PR |
 | `/sdrf:techrefine` | Verify/refine technical metadata from raw files via techsdrf |
 
 ## Installation

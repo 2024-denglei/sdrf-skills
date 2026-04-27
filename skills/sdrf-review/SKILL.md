@@ -128,3 +128,4 @@ Provide clear next steps:
 5. If the SDRF is for a ProteomeXchange dataset and the verdict is VALID or NEEDS MINOR FIXES:
    suggest contributing the annotation via `/sdrf:contribute {PXD}` to the
    `sdrf-annotated-datasets` community repository
+
