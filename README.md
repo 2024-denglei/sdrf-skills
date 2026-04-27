@@ -367,6 +367,15 @@ To add a new skill:
 3. Reference `spec/` files for any specification data (never hardcode)
 4. Test with Claude Code: `/your-skill [arguments]`
 
+## Contact
+
+Maintained by the [BigBio](https://github.com/bigbio) team.
+
+- **Yasset Perez-Riverol** — [@ypriverol](https://github.com/ypriverol) · [ypriverol@gmail.com](mailto:ypriverol@gmail.com) · [@ypriverol](https://twitter.com/ypriverol)
+
+For questions about the SDRF specification itself, open an issue in
+[bigbio/proteomics-metadata-standard](https://github.com/bigbio/proteomics-metadata-standard).
+
 ## License
 
 MIT
