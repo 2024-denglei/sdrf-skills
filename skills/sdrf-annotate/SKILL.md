@@ -24,27 +24,66 @@ If a **PXD accession** is provided:
 ### 1.1 Get PRIDE project metadata
 ```text
 Tool: get_project_details(project_accession="PXD######")
-Extract: organism, instruments, modifications, publications (PMID/DOI), file count, description
+Extract: title, description, sample_processing_protocol, data_processing_protocol,
+         organism, instruments, modifications, publications, keywords
 ```
+`publications` is a LIST of fully-resolved records — one per PRIDE reference:
+```json
+{"pmid": "24657495", "pmcid": "PMC4047622", "doi": "10.1016/j.jprot.2014.03.010",
+ "is_open_access": true, "reference": "Collins MO et al. J Proteomics 2014..."}
+```
+PMID → PMCID/DOI/open-access resolution is done **inside this call** via
+Europe PMC. You do NOT need a separate identifier-conversion tool.
+
+The sample/data processing protocols are submitter-authored free text and are
+often the highest-signal source for enzyme, modifications, tolerances, labeling,
+and instrument acquisition — read them BEFORE the publication.
 
 ### 1.2 Get the file list
 ```text
 Tool: get_project_files(project_accession="PXD######")
-Extract: raw file names (for comment[data file]), file count, file types
+Extract: raw_file_names (for comment[data file]), rawfile_count,
+         ftp_root_url   (HTTPS mirror of the PRIDE folder — all files live here),
+         aspera_root_url (use for high-throughput bulk transfer)
 ```
 
 ### 1.3 Find and read the publication
+
+For each record in `publications` (Step 1.1), pick exactly ONE tool:
+
 ```text
-a. Extract PMID or DOI from PRIDE response (publications field)
-b. If PMID → get_article_metadata(pmids=["PMID"])
-c. Convert to PMC ID → convert_article_ids(ids=["PMID"], id_type="pmid")
-d. If PMC ID exists → get_full_text_article(pmc_ids=["PMC_ID"])
-   Focus on: Methods section, sample descriptions, Table 1 (demographics)
-e. If NO PMID in PRIDE → search_europepmc(query="PXD######")
-   This searches EuropePMC for papers mentioning the accession.
-f. If DOI but no PMID → convert_article_ids(ids=["DOI"], id_type="doi")
-g. If only preprint → search_preprints() with title keywords from PRIDE
+a. pmcid is set AND is_open_access == true:
+     → get_full_text_article(pmc_ids=["PMC######"])
+     Default response is slim: only SDRF-relevant sections (Methods /
+     Materials / Experimental procedures / Sample processing) + abstract +
+     deduped table and supplementary captions. Results/Discussion are
+     EXCLUDED by default to keep context small.
+
+     If you need Results text (rare — sometimes Table 1 sits there):
+        get_full_text_article(pmc_ids=["PMC######"], sections=["results"])
+
+     If the paper is very long or the Methods section alone still overflows
+     context, use the two-step TOC-first flow:
+        1. get_full_text_article(pmc_ids=["PMC######"], mode="toc")
+           → returns section titles + char counts, table/suppl captions,
+             abstract. ~1-3 KB.
+        2. get_full_text_section(pmc_id="PMC######", section="<name>")
+           → pulls that ONE section's full body. On miss it returns an
+             `available` list so you can retry with a valid name.
+
+b. otherwise (pmid and/or doi set, but no OA full text):
+     → get_article_metadata(ids=["<PMID or PMCID or DOI>"])
+     This ONE tool accepts any mix of PMID / PMCID / DOI and returns abstract +
+     metadata only. Tell the user the full text is not openly available and
+     that only the abstract was used.
 ```
+
+**When `publications` is empty, or every record has null pmid/pmcid/doi**,
+do NOT search for a paper. Stop and ask the user:
+> "PRIDE does not list a resolvable publication for `PXD######`, and I cannot
+> fetch the article automatically. Could you provide a PMID, PMCID, DOI, or
+> paste the Methods section so I can continue? Otherwise I will proceed with
+> PRIDE metadata only and mark affected columns as `not available`."
 
 ### 1.4 Extract sample metadata from the paper
 Read the paper systematically and extract:
@@ -110,8 +149,21 @@ For EACH unique value that goes into a characteristics column:
 ### 4.1 Search OLS for the correct ontology term
 ```text
 Use: searchClasses(query="breast carcinoma", ontologyId="mondo")
-Or: search(query="Homo sapiens")
+Or:  search(query="Homo sapiens")       # only when the target ontology is unknown
 ```
+
+**Smart mode is the default** (do NOT pass `mode` unless you need to override):
+
+1. The tool first tries an **exact** label/synonym match.
+   - If exactly one hit → returns ONLY that record. Use its accession directly.
+2. If there is no exact hit → the tool falls back to **fuzzy top-3**
+   and tags the response with `fallback: "fuzzy"`.
+   - Pick the best candidate. If none fit, refine the query (correct typos,
+     try a synonym, or switch to a more specific ontology) and search again.
+
+Override only when necessary:
+- `mode="exact"` — force exact-only (e.g. strict validation); empty on miss.
+- `mode="fuzzy"` — force fuzzy top-N; use when exploring close neighbours.
 
 ### 4.2 Verify the term is from the CORRECT ontology
 Read TERMS.tsv `values` field for the column to determine which ontology(ies) to search:
@@ -123,13 +175,54 @@ Read TERMS.tsv `values` field for the column to determine which ontology(ies) to
 - instrument → MS, PRIDE
 - modifications → UNIMOD
 
-### 4.3 Check specificity
+### 4.3 Cell Line Lookup (if using cell-lines template)
+
+For any `characteristics[cell line]` column, use the **cellosaurus** CLI tool to get
+the complete metadata including all ontology accessions:
+
+```bash
+# Look up a cell line by name or accession
+python -m tools cellosaurus lookup HeLa
+python -m tools cellosaurus lookup CVCL_0030
+
+# Search for cell lines by keyword
+python -m tools cellosaurus search breast --limit 10
+```
+
+This will return:
+- `characteristics[cellosaurus accession]` → CVCL_XXXX (e.g., CVCL_0030)
+- `characteristics[cellosaurus name]` → official name (e.g., HeLa)
+- `characteristics[organism]` → homo sapiens
+- `characteristics[organism part]` → tissue with UBERON/BTO accession
+- `characteristics[disease]` → disease with NCIT/MONDO/EFO accessions
+- `characteristics[cell type]` → cell type with CL accession
+- `characteristics[age]`, `characteristics[sex]`, `characteristics[ancestry category]`
+- CLO, BTO, EFO accessions for the cell line ontology
+
+Example output:
+```
+Cell line: HeLa cell
+Match: exact (confidence: 1.00)
+Cellosaurus accession: CVCL_0030
+Organism: homo sapiens (NCBITaxon:9606)
+Organ/tissue: cervix (UBERON:0000002)
+Disease: Human papillomavirus-related endocervical adenocarcinoma
+  NCIT: NCIT:C27677, MONDO: MONDO:0002638, EFO: EFO:0001185
+Cell type: not available (CL accession not available)
+Age: 30Y6M
+Sex: female
+CLO: HeLa cell (CLO_0003684)
+```
+
+If the tool is not available, check https://www.cellosaurus.org/search manually.
+
+### 4.4 Check specificity
 - "cancer" → too generic, use "breast carcinoma" or specific subtype
 - "tissue" → too generic, use "liver" or "temporal cortex"
 - "cell" → too generic, use "T cell" or "epithelial cell"
 - Use getChildren() to see if there's a more specific child term
 
-### 4.4 Use reserved words correctly
+### 4.5 Use reserved words correctly
 - `not available` — information exists but was not provided
 - `not applicable` — property doesn't apply to this sample
 - `normal` — healthy control (for disease column, use with PATO:0000461)
