@@ -356,13 +356,13 @@ Present the validated SDRF as a TSV code block and explain:
 
 If the annotation was for a **ProteomeXchange dataset** (PXD accession):
 
-1. Check if this PXD already exists in `spec/annotated-projects/{PXD}/`
+1. Check if this PXD already exists in `bigbio/sdrf-annotated-datasets` under `datasets/{PXD}/`
 2. Tell the user their annotation can be contributed to the community:
 
 ```text
 Your SDRF annotation for {PXD} is ready!
 
-The proteomics-sample-metadata community repository collects annotated SDRF files
+The sdrf-annotated-datasets community repository collects annotated SDRF files
 for ProteomeXchange datasets. Contributing your annotation means:
   - Other researchers can reuse your metadata
   - Analysis pipelines (quantms) can automatically reprocess the dataset
@@ -371,7 +371,7 @@ for ProteomeXchange datasets. Contributing your annotation means:
 Run /sdrf:contribute {PXD} to create a PR, or see the commands to do it manually.
 ```
 
-3. If the PXD already exists in annotated-projects/, mention this is an update to an existing annotation
+3. If the PXD already exists in `datasets/`, mention this is an update to an existing annotation
 
 This step is a recommendation only — do not force the user to contribute.
 

@@ -1,8 +1,46 @@
-# sdrf-skills — SDRF Annotation Skills
+# sdrf-skills
+
+**Turn [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Cursor](https://cursor.com), [OpenAI Codex](https://developers.openai.com/codex), [Gemini CLI](https://github.com/google-gemini/gemini-cli), or [OpenCode](https://opencode.ai) into an expert proteomics SDRF annotator.**
+
+[![Claude Code Skill](https://img.shields.io/badge/Claude_Code-Skill-blue?logo=anthropic&logoColor=white)](https://docs.anthropic.com/en/docs/claude-code)
+[![Cursor](https://img.shields.io/badge/Cursor-Skill-black?logo=cursor&logoColor=white)](https://cursor.com)
+[![Codex](https://img.shields.io/badge/Codex-Skill-green?logo=openai&logoColor=white)](https://developers.openai.com/codex)
+[![Gemini CLI](https://img.shields.io/badge/Gemini_CLI-Skill-4285F4?logo=google&logoColor=white)](https://github.com/google-gemini/gemini-cli)
+[![OpenCode](https://img.shields.io/badge/OpenCode-Skill-purple)](https://opencode.ai)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+[![SDRF Spec](https://img.shields.io/badge/SDRF-proteomics--metadata--standard-orange)](https://github.com/bigbio/proteomics-metadata-standard)
+[![Skills](https://img.shields.io/badge/skills-16-informational)](#available-skills)
+[![PRIDE](https://img.shields.io/badge/data-PRIDE-2C7BB6)](https://www.ebi.ac.uk/pride/)
+[![Ontologies](https://img.shields.io/badge/ontologies-OLS-7E57C2)](https://www.ebi.ac.uk/ols4/)
+
+> **Pick a dataset → The agent fetches PRIDE + paper → You review a validated SDRF.**
 
 Structured skills that give AI assistants expert-level capabilities for annotating,
 validating, improving, and brainstorming proteomics metadata in the
 [SDRF](https://github.com/bigbio/proteomics-metadata-standard) format.
+
+## Workflow
+
+```text
+     SETUP             PLAN             ANNOTATE          VALIDATE           REFINE             SHARE
+ ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
+ │  Conda   │     │ Templates│     │   PXD    │     │ Columns  │     │  Score   │     │ Convert  │
+ │   Pip    │────▶│ Strategy │────▶│  PRIDE   │────▶│   OLS    │────▶│  AutoFix │────▶│   PR     │
+ │  Tools   │     │  Layers  │     │  Paper   │     │  Rules   │     │ Raw scan │     │ Pipeline │
+ └──────────┘     └──────────┘     └──────────┘     └──────────┘     └──────────┘     └──────────┘
+  /sdrf:setup   /sdrf:brainstorm   /sdrf:annotate   /sdrf:validate   /sdrf:improve   /sdrf:contribute
+                /sdrf:templates                                      /sdrf:fix         /sdrf:convert
+                                                                     /sdrf:review
+                                                                     /sdrf:techrefine
+
+                  ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
+                  │  Format  │     │ Ontology │     │  Plain   │     │  Batch   │
+                  │   Spec   │     │  Lookup  │     │   Lang   │     │ Confound │
+                  │  Rules   │     │  Verify  │     │ Concepts │     │ Replic.  │
+                  └──────────┘     └──────────┘     └──────────┘     └──────────┘
+                 /sdrf:knowledge   /sdrf:terms     /sdrf:explain     /sdrf:design
+```
 
 ## What it does
 
@@ -13,7 +51,9 @@ guided by the methodology of experienced annotators.
 The SDRF specification data (column definitions, templates) lives in a git submodule
 and is read at runtime — so the skills stay current when the spec evolves.
 
-All 15 skills are under the `sdrf:` namespace. In Claude Code, type `/sdrf:` and autocomplete will show them all.
+## Available skills
+
+All 16 skills are under the `sdrf:` namespace. In Claude Code, type `/sdrf:` and autocomplete will show them all.
 
 | Skill | What it does |
 |-------|-------------|
@@ -30,8 +70,9 @@ All 15 skills are under the `sdrf:` namespace. In Claude Code, type `/sdrf:` and
 | `/sdrf:explain` | Explain any column, error, or concept in plain language |
 | `/sdrf:convert` | Choose and configure analysis pipelines from SDRF |
 | `/sdrf:design` | Detect batch effects, confounders, replication issues |
-| `/sdrf:contribute` | Contribute annotated SDRF back to community via PR |
+| `/sdrf:contribute` | Contribute annotated SDRF back to sdrf-annotated-datasets via PR |
 | `/sdrf:techrefine` | Verify/refine technical metadata from raw files via techsdrf |
+| `/sdrf:cellline` | Translate Cellosaurus records into SDRF cell-line columns (organism, disease, sampling site, sex, ancestry) |
 
 ## Installation
 
@@ -198,11 +239,11 @@ Claude:
 You: /sdrf:contribute PXD045678
 
 Claude:
-  → Checks if PXD045678 already exists in annotated-projects/
+  → Checks if PXD045678 already exists in datasets/
   → Validates the SDRF file
-  → Forks bigbio/proteomics-sample-metadata
+  → Forks bigbio/sdrf-annotated-datasets
   → Creates branch annotation/PXD045678
-  → Commits the SDRF file to annotated-projects/PXD045678/
+  → Commits the SDRF file to datasets/PXD045678/
   → Opens a PR with dataset summary (organism, templates, row count)
 ```
 
@@ -326,7 +367,8 @@ sdrf-skills/
 │   ├── sdrf-contribute/SKILL.md   # /sdrf:contribute — PR to community repo
 │   ├── sdrf-convert/SKILL.md     # /sdrf:convert — pipeline guidance
 │   ├── sdrf-design/SKILL.md      # /sdrf:design — experimental design analysis
-│   └── sdrf-techrefine/SKILL.md   # /sdrf:techrefine — techsdrf raw file refinement
+│   ├── sdrf-techrefine/SKILL.md  # /sdrf:techrefine — techsdrf raw file refinement
+│   └── sdrf-cellline/SKILL.md    # /sdrf:cellline — Cellosaurus → SDRF translation
 ├── CLAUDE.md                     # Claude Code — project config
 ├── GEMINI.md                     # Gemini CLI — project config
 ├── BRAINSTORM.md                 # Design document
@@ -389,6 +431,19 @@ To add a new skill:
 2. Write the workflow instructions in markdown
 3. Reference `spec/` files for any specification data (never hardcode)
 4. Test with Claude Code: `/your-skill [arguments]`
+
+## Contact
+
+Maintained by the [BigBio](https://github.com/bigbio) team.
+
+- **Yasset Perez-Riverol** (maintainer) — [@ypriverol](https://github.com/ypriverol) · [ypriverol@gmail.com](mailto:ypriverol@gmail.com) · [@ypriverol](https://twitter.com/ypriverol)
+
+### Contributors
+
+- **Asier Larrea Sebal** — [@asierlarrea](https://github.com/asierlarrea) · EMBL-EBI
+
+For questions about the SDRF specification itself, open an issue in
+[bigbio/proteomics-metadata-standard](https://github.com/bigbio/proteomics-metadata-standard).
 
 ## License
 
