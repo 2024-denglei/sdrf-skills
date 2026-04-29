@@ -17,4 +17,3 @@ dependencies:
   - thermorawfileparser # for Thermo .raw files (optional; techsdrf skips .raw without it)
   - pip:
     - requests>=2.28
-    - pydantic>=2.0

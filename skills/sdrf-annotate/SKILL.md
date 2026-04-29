@@ -47,6 +47,18 @@ Extract: raw_file_names (for comment[data file]), rawfile_count,
          aspera_root_url (use for high-throughput bulk transfer)
 ```
 
+If this returns no usable raw files for a MassIVE-hosted dataset, use the local
+MassIVE fallback helper before giving up on `comment[data file]`:
+
+```bash
+python -m tools massive-files PXD016117 --mode raw
+python -m tools massive-files PXD016117 --mode acquisition --format tsv
+```
+
+Use it only as a fallback when PRIDE is empty or incomplete. It resolves the
+MassIVE accession through ProteomeCentral, inspects the MassIVE dataset details,
+and then walks the MassIVE FTP tree deterministically.
+
 ### 1.3 Find and read the publication
 
 For each record in `publications` (Step 1.1), pick exactly ONE tool:
@@ -177,44 +189,27 @@ Read TERMS.tsv `values` field for the column to determine which ontology(ies) to
 
 ### 4.3 Cell Line Lookup (if using cell-lines template)
 
-For any `characteristics[cell line]` column, use the **cellosaurus** CLI tool to get
-the complete metadata including all ontology accessions:
+For any `characteristics[cell line]` column, prefer the dedicated
+`/sdrf:cellline` workflow or the live Cellosaurus service rather than a bundled
+full-database script. The skill owns the decision rules; tools are only helpers.
 
-```bash
-# Look up a cell line by name or accession
-python -m tools cellosaurus lookup HeLa
-python -m tools cellosaurus lookup CVCL_0030
+Use this order:
 
-# Search for cell lines by keyword
-python -m tools cellosaurus search breast --limit 10
-```
+1. `/sdrf:cellline <name or CVCL_XXXX>` for the full translation workflow
+2. `python -m tools cellline lookup <name>` for the curated offline helper
+3. https://www.cellosaurus.org/search when you need manual confirmation
 
-This will return:
+The goal is to recover:
 - `characteristics[cellosaurus accession]` → CVCL_XXXX (e.g., CVCL_0030)
 - `characteristics[cellosaurus name]` → official name (e.g., HeLa)
-- `characteristics[organism]` → homo sapiens
-- `characteristics[organism part]` → tissue with UBERON/BTO accession
-- `characteristics[disease]` → disease with NCIT/MONDO/EFO accessions
-- `characteristics[cell type]` → cell type with CL accession
+- `characteristics[organism]`
+- `characteristics[organism part]`
+- `characteristics[disease]`
+- `characteristics[cell type]`
 - `characteristics[age]`, `characteristics[sex]`, `characteristics[ancestry category]`
-- CLO, BTO, EFO accessions for the cell line ontology
 
-Example output:
-```
-Cell line: HeLa cell
-Match: exact (confidence: 1.00)
-Cellosaurus accession: CVCL_0030
-Organism: homo sapiens (NCBITaxon:9606)
-Organ/tissue: cervix (UBERON:0000002)
-Disease: Human papillomavirus-related endocervical adenocarcinoma
-  NCIT: NCIT:C27677, MONDO: MONDO:0002638, EFO: EFO:0001185
-Cell type: not available (CL accession not available)
-Age: 30Y6M
-Sex: female
-CLO: HeLa cell (CLO_0003684)
-```
-
-If the tool is not available, check https://www.cellosaurus.org/search manually.
+Any CLO, BTO, EFO, MONDO, UBERON, CL, or NCBITaxon accession written into the
+SDRF must still be verified via OLS before finalizing the row.
 
 ### 4.4 Check specificity
 - "cancer" → too generic, use "breast carcinoma" or specific subtype

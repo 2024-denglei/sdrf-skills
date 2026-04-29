@@ -65,6 +65,16 @@ If a PXD accession is available:
 - Does the instrument match?
 - Are all raw files accounted for?
 
+If PRIDE exposes no raw files and the dataset is hosted by MassIVE, use the
+deterministic helper:
+
+```bash
+python -m tools massive-files PXD016117 --mode raw --format tsv
+```
+
+Treat this as a fallback for reconstructing defensible `comment[data file]`
+values when the repository metadata is incomplete.
+
 ## Step 5: Design Analysis
 
 Analyze the experimental design:
@@ -128,4 +138,3 @@ Provide clear next steps:
 5. If the SDRF is for a ProteomeXchange dataset and the verdict is VALID or NEEDS MINOR FIXES:
    suggest contributing the annotation via `/sdrf:contribute {PXD}` to the
    `sdrf-annotated-datasets` community repository
-

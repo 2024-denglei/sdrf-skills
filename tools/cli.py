@@ -5,10 +5,9 @@ Usage:
   python -m tools score <file.sdrf.tsv>           # quality scoring
   python -m tools fix <file.sdrf.tsv> [-o out]    # auto-fix
   python -m tools benchmark <PXD1> <file2> ...    # benchmark suite
-  python -m tools crossval <project_info>          # cross-validate
   python -m tools verify <ACCESSION> [--label L]   # verify single term
   python -m tools cellline lookup <name>           # curated cell line lookup
-  python -m tools cellosaurus lookup <name>        # full Cellosaurus lookup
+  python -m tools massive-files <PXD|MSV|task>     # MassIVE raw/acquisition file resolver
 """
 
 from __future__ import annotations
@@ -72,14 +71,6 @@ def cmd_benchmark(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_crossval(args: argparse.Namespace) -> int:
-    from tools.cross_validator import CrossValidator
-    validator = CrossValidator(cache_dir=args.cache_dir)
-    report = validator.cross_validate(args.project_info)
-    print(report.summary())
-    return 0
-
-
 def cmd_verify(args: argparse.Namespace) -> int:
     from tools.ols_client import OLSClient
     client = OLSClient()
@@ -107,6 +98,21 @@ def cmd_verify(args: argparse.Namespace) -> int:
             print(f"Accession {args.accession} not found in OLS")
             return 1
     return 0
+
+
+def cmd_massive_files(args: argparse.Namespace) -> int:
+    from tools.massive_raw_files import run_cli
+
+    argv = [args.accession]
+    if args.mode:
+        argv.extend(["--mode", args.mode])
+    if args.format:
+        argv.extend(["--format", args.format])
+    if args.ftp_url:
+        argv.extend(["--ftp-url", args.ftp_url])
+    if args.summary_only:
+        argv.append("--summary-only")
+    return run_cli(argv)
 
 
 def cmd_cellline(args: argparse.Namespace) -> int:
@@ -147,72 +153,6 @@ def cmd_cellline(args: argparse.Namespace) -> int:
 
     return 0
 
-
-def cmd_cellosaurus(args: argparse.Namespace) -> int:
-    from tools.cellosaurus_db import CellosaurusDatabase, format_entry_display, format_entry_tsv
-
-    if args.cellosaurus_command == "lookup":
-        db = CellosaurusDatabase()
-        db.load(args.db)
-        result = db.find(args.name)
-        if result.entry:
-            if args.format == "tsv":
-                print(format_entry_tsv(result.entry))
-            else:
-                print(format_entry_display(result.entry, result))
-        else:
-            print(f"Cell line '{args.name}' not found in database")
-            return 1
-
-    elif args.cellosaurus_command == "stats":
-        db = CellosaurusDatabase()
-        db.load(args.db)
-        print(f"Cellosaurus Database: {db.size} entries, {len(db._name_index)} indexed names")
-
-    elif args.cellosaurus_command == "search":
-        from tools.cellosaurus_db import CellosaurusDatabase
-        import difflib
-        db = CellosaurusDatabase()
-        db.load(args.db)
-        results = []
-        for accession, entry in db.entries.items():
-            match_name = entry.cell_line or entry.cellosaurus_name or ""
-            norm = db._normalize(match_name)
-            if db._normalize(args.keyword) in norm or norm in db._normalize(args.keyword):
-                ratio = difflib.SequenceMatcher(None, db._normalize(args.keyword), norm).ratio()
-                results.append((ratio, entry))
-            else:
-                for syn in entry.synonyms + entry.synonyms_by_cellosaurus:
-                    norm_syn = db._normalize(syn)
-                    if db._normalize(args.keyword) in norm_syn or norm_syn in db._normalize(args.keyword):
-                        ratio = difflib.SequenceMatcher(None, db._normalize(args.keyword), norm_syn).ratio()
-                        results.append((ratio, entry))
-                        break
-        seen = set()
-        unique_results = []
-        for ratio, entry in sorted(results, key=lambda x: -x[0]):
-            acc = entry.cellosaurus_accession
-            if acc not in seen:
-                seen.add(acc)
-                unique_results.append((ratio, entry))
-        if not unique_results:
-            print(f"No results found for '{args.keyword}'")
-            return 1
-        print(f"Found {len(unique_results)} results for '{args.keyword}':\n")
-        for ratio, entry in unique_results[:args.limit]:
-            accession = entry.cellosaurus_accession
-            name = entry.cell_line if entry.cell_line != "not available" else entry.cellosaurus_name
-            disease = entry.disease if entry.disease != "not available" else ""
-            print(f"  {name} ({accession})")
-            print(f"    Organism: {entry.organism}")
-            if disease:
-                print(f"    Disease: {disease}")
-            print(f"    Match confidence: {ratio:.2f}")
-            print()
-
-    return 0
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="python -m tools",
@@ -240,10 +180,24 @@ def main() -> None:
     p.add_argument("sources", nargs="+")
     p.add_argument("--online", action="store_true")
 
-    # crossval
-    p = subparsers.add_parser("crossval", help="Cross-validate with multiple AI models")
-    p.add_argument("project_info")
-    p.add_argument("--cache-dir", default=None)
+    # massive-files
+    p = subparsers.add_parser(
+        "massive-files",
+        help="Resolve/list MassIVE raw or acquisition files for a PXD/MSV accession",
+    )
+    p.add_argument("accession", help="PXD accession, MassIVE MSV accession, or MassIVE task id")
+    p.add_argument(
+        "--mode",
+        choices=("raw", "acquisition", "all"),
+        default="raw",
+    )
+    p.add_argument(
+        "--format",
+        choices=("text", "tsv", "json"),
+        default="text",
+    )
+    p.add_argument("--ftp-url")
+    p.add_argument("--summary-only", action="store_true")
 
     # verify
     p = subparsers.add_parser("verify", help="Verify a single ontology accession")
@@ -263,22 +217,6 @@ def main() -> None:
     cl_stats = cl_sub.add_parser("stats", help="Database statistics")
     cl_stats.add_argument("--db", default=None)
 
-    # cellosaurus
-    p = subparsers.add_parser("cellosaurus",
-                              help="Full Cellosaurus database lookup (all ontology accessions)")
-    cs_sub = p.add_subparsers(dest="cellosaurus_command", required=True)
-    cs_lookup = cs_sub.add_parser("lookup", help="Look up a cell line by name or accession")
-    cs_lookup.add_argument("name", help="Cell line name or accession (e.g. HeLa, CVCL_0030)")
-    cs_lookup.add_argument("--db", default=None)
-    cs_lookup.add_argument("--format", choices=["text", "tsv"], default="text",
-                            help="Output format (default: text)")
-    cs_stats = cs_sub.add_parser("stats", help="Show database statistics")
-    cs_stats.add_argument("--db", default=None)
-    cs_search = cs_sub.add_parser("search", help="Search cell lines by keyword")
-    cs_search.add_argument("keyword", help="Keyword to search for")
-    cs_search.add_argument("--db", default=None)
-    cs_search.add_argument("--limit", type=int, default=10, help="Max results to show")
-
     args = parser.parse_args()
 
     # Set default db path for cellline commands
@@ -286,19 +224,13 @@ def main() -> None:
         from tools.cellline_db import DEFAULT_DB_PATH
         args.db = str(DEFAULT_DB_PATH)
 
-    # Set default db path for cellosaurus commands
-    if args.command == "cellosaurus" and hasattr(args, "db") and args.db is None:
-        from tools.cellosaurus_db import DEFAULT_CELLOSAURUS_PATH
-        args.db = str(DEFAULT_CELLOSAURUS_PATH)
-
     commands = {
         "check": cmd_check,
         "score": cmd_score,
         "fix": cmd_fix,
         "benchmark": cmd_benchmark,
-        "crossval": cmd_crossval,
+        "massive-files": cmd_massive_files,
         "cellline": cmd_cellline,
-        "cellosaurus": cmd_cellosaurus,
         "verify": cmd_verify,
     }
 
