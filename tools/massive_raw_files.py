@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-"""
-Resolve MassIVE raw or acquisition file names for a PXD/MSV accession.
+"""Resolve MassIVE raw or acquisition file names for a PXD/MSV accession.
 
 This helper is intended for SDRF curation when:
 - a ProteomeXchange accession is hosted by MassIVE
@@ -12,7 +10,7 @@ Resolution chain:
 2. If a MassIVE task is available, query the MassIVE detail JSON endpoint.
 3. Recursively walk the MassIVE FTP tree to list files.
 
-The script defaults to vendor raw-like files, but can also include open formats
+The helper defaults to vendor raw-like files, but can also include open formats
 such as mzML/mzXML or emit every file under the dataset FTP root.
 """
 
@@ -70,7 +68,10 @@ class MassiveResolution:
 
 
 def fetch_json(url: str) -> object:
-    request = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": USER_AGENT})
+    request = urllib.request.Request(
+        url,
+        headers={"Accept": "application/json", "User-Agent": USER_AGENT},
+    )
     with urllib.request.urlopen(request, timeout=DEFAULT_TIMEOUT) as response:
         return json.load(response)
 
@@ -245,7 +246,7 @@ def ftp_walk_files(host: str, root_path: str, mode: str) -> list[str]:
             entries = list(ftp.mlsd(path))
         except (ftplib.error_perm, AttributeError):
             # Some MassIVE servers expose only NLST-style directory listings.
-            # Recurse by probing each entry with cwd() so we don't stop at the
+            # Recurse by probing each entry with cwd() so we do not stop at the
             # top-level folder names.
             walk_nlst(path)
             return
@@ -327,7 +328,7 @@ def emit_json(resolution: MassiveResolution, ftp_url: str | None, files: list[st
     print()
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("accession", help="PXD accession, MassIVE MSV accession, or MassIVE task id")
     parser.add_argument(
@@ -351,15 +352,16 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Resolve and print dataset-level metadata without walking the FTP tree",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
-def main() -> None:
-    args = parse_args()
+def run_cli(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
     resolution = resolve_accession(args.accession)
     if args.summary_only:
         emit_json(resolution, resolution.ftp_url, [])
-        return
+        return 0
+
     candidates = [args.ftp_url] if args.ftp_url else ftp_candidates(resolution)
     if not candidates:
         raise SystemExit("Could not determine a MassIVE FTP root for this accession.")
@@ -388,6 +390,11 @@ def main() -> None:
         emit_tsv(resolution, files)
     else:
         emit_text(files)
+    return 0
+
+
+def main() -> None:
+    sys.exit(run_cli())
 
 
 if __name__ == "__main__":
