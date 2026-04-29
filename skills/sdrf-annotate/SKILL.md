@@ -47,17 +47,31 @@ Extract: raw_file_names (for comment[data file]), rawfile_count,
          aspera_root_url (use for high-throughput bulk transfer)
 ```
 
-If this returns no usable raw files for a MassIVE-hosted dataset, use the local
-MassIVE fallback helper before giving up on `comment[data file]`:
-
+If MCP access is unavailable or incomplete, prefer the PRIDE Archive REST fallback:
+```text
+GET https://www.ebi.ac.uk/pride/ws/archive/v3/projects/PXD######/files/all
+```
+Use this endpoint to retrieve the complete file list for the project in one call.
+It is the preferred REST path for counting files, checking raw-file coverage, and
+building `comment[data file]` values during annotation.
+If this endpoint returns `0` files for a valid PXD hosted through
+`PanoramaPublic`, `MassIVE`, `iProX`, or `jPOST`, treat that as
+`archive endpoint empty for external repository` rather than `no data`.
+For MassIVE-backed datasets, use the helper in this repo to recover raw
+file names from ProteomeCentral + MassIVE JSON + MassIVE FTP:
 ```bash
 python -m tools massive-files PXD016117 --mode raw
 python -m tools massive-files PXD016117 --mode acquisition --format tsv
 ```
-
-Use it only as a fallback when PRIDE is empty or incomplete. It resolves the
-MassIVE accession through ProteomeCentral, inspects the MassIVE dataset details,
-and then walks the MassIVE FTP tree deterministically.
+This is the preferred fallback when you need `comment[data file]` values for a
+MassIVE-hosted PXD and PRIDE does not expose the archive file list. The helper
+resolves the MassIVE accession through ProteomeCentral, inspects the MassIVE
+dataset details, and then walks the MassIVE FTP tree deterministically.
+Also inspect companion files under MassIVE `other/` or supplementary dataset
+attachments. In practice these often contain the curator key you need for TMT
+channel-to-sample mapping, pooled-reference channels, blanks, longitudinal
+timepoints, or cohort aliases that are not recoverable from PRIDE metadata
+alone.
 
 ### 1.3 Find and read the publication
 
@@ -102,11 +116,81 @@ Read the paper systematically and extract:
 - How many samples? How many conditions/groups?
 - Tissues/cell types per group
 - Patient demographics (age, sex, ancestry) if available
+- Developmental stage when the cohort is clearly adult, pediatric, fetal, juvenile, etc.
 - Experimental conditions (treatment, disease state, time points)
 - Labeling strategy (which TMT/iTRAQ channels for which samples)
 - Fractionation details (number of fractions, method)
 - Instrument and acquisition method details
 - Modifications searched
+
+Demographic evidence rules:
+- `characteristics[developmental stage]` can be added from cohort-level evidence when the whole analyzed cohort is clearly in one stage, for example all subjects are adults or the study is explicitly pediatric.
+- `characteristics[age]`, `characteristics[sex]`, and `characteristics[ethnicity]` should be added only when they can be mapped to individual source samples or a per-sample supplementary table.
+- If the paper reports only group summaries such as median age, percent male, or ethnicity distribution, keep those fields out of per-sample SDRF rows and mention the limitation in the notes.
+
+### 1.4b Map PRIDE source samples to ENA/BioSamples when possible
+For datasets with paired ENA/SRA/BioSamples records, especially metaproteomics studies:
+
+- Treat BioSample accessions as **source-sample identifiers**, not raw-file identifiers
+- A repeated BioSample accession across many SDRF rows is correct when those rows share the same `source name`
+- Do **not** assume one BioSample per raw file, fraction, or technical replicate
+
+Use this mapping order:
+
+1. Prefer **exact study-linked lookups** in ENA or BioSamples:
+   - ENA sample search by study/BioProject accession
+   - BioSamples exact filters on project/study accessions
+2. Compare the returned sample metadata against the paper and PRIDE:
+   - collection date
+   - geographic location / coordinates
+   - isolation source / environmental medium
+   - sample title / alias
+   - whether the study describes one shared source sample or multiple distinct source samples
+3. Add `characteristics[biosample accession number]` only when:
+   - the PRIDE `source name` clearly maps to a deposited ENA/BioSamples sample, or
+   - there is one well-supported shared source sample that all assay rows derive from
+
+Avoid this failure mode:
+
+- BioSamples UI free-text search can return unrelated accessions through fuzzy matching
+- Treat UI text-search hits as **leads only**, not evidence
+- Confirm project membership with exact ENA/BioSamples study-linked queries before annotating
+
+Metaproteomics rule of thumb:
+
+- if all rows in one SDRF share one `source name`, one `biological replicate`, and differ only by fraction / technical replicate / workflow, repeating one BioSample accession across those rows is usually the correct representation
+- if the paper describes multiple distributed aliquots from one shared environmental source sample, a single repeated BioSample accession may still be appropriate if the external record clearly represents that shared source sample
+
+### 1.5 Guard plasma campaigns against false positives
+If the user is targeting blood-plasma projects:
+- default to `Homo sapiens` unless the user explicitly requests animal studies
+- confirm species with PRIDE `organisms` first
+- if PRIDE species is incomplete, use the linked paper to confirm that the plasma cohort is human-only before promotion
+- keep mouse, rat, or mixed-species plasma projects as audit-only candidates until the user asks for them
+- expand the disease through OLS before PRIDE discovery:
+  - lexical OLS first in `MONDO`, `DOID`, `EFO`, and `NCIT`
+  - add useful synonyms and preferred labels
+  - use OLS embeddings for broad disease names when subtype phrasing is likely in PRIDE, for example `kidney tumor` -> renal cancer variants
+  - keep in-scope child terms when biomarker studies use the subtype rather than the parent label, for example `myositis` -> `dermatomyositis`, `sarcoma` -> `Ewing sarcoma`, `myeloma` -> `multiple myeloma`, or `alcohol-related liver disease` -> `alcoholic hepatitis`
+  - for influenza-like campaigns, acceptable widening can include `influenza A`, `IAV`, `H1N1`, `flu`, and, if explicitly allowed by the user, broader `viral pneumonia` plus `serum`
+  - tag each promoted candidate as an `exact`, `child_term`, `related`, or `surrogate` disease match so later ranking is honest about coverage strength
+- classify the project workflow from PRIDE before prioritizing it:
+  - read `experimentTypes` for acquisition style like `Data-independent acquisition`, `Data-dependent acquisition`, or `Gel-based experiment`
+  - read `quantificationMethods` for explicit quant style like `TMT`, `iTRAQ`, `label-free quantification`, `Dimethyl Labeling`, or `NSAF`
+  - if those fields are incomplete, inspect `sampleProcessingProtocol`, `dataProcessingProtocol`, keywords, and the manuscript methods section for explicit `TMT`, `iTRAQ`, `LFQ`, `DIA`, `SWATH`, `MaxQuant`, or `Spectronaut` wording
+  - keep separate `acquisition_mode` and `quant_mode` annotations rather than collapsing everything into one label
+- treat `blood plasma`, `plasma proteome`, `plasma samples`, and `plasma extracellular vesicles` as valid plasma-sample signals
+- do NOT treat `plasma cells` or `plasma membrane` as blood-plasma sample signals
+- for the current plasma-dataset campaigns, only promote datasets hosted by `PRIDE`, `MassIVE`, `jPOST`, or `iProX`; keep `PanoramaPublic` hits as audit-only candidates for now
+- for automatic discovery or ranking, only shortlist accessions when plasma context is present (`positive` or `ambiguous`) and the disease is explicit in the title, description, or linked paper
+- keep `plasma_context=missing` disease hits as audit-only candidates until manuscript or PRIDE evidence confirms a real blood-plasma sample
+- if a candidate dataset lacks usable raw or acquisition files, do not promote it into the active annotation set even if the disease and matrix match
+- when a manuscript is available, classify the accession before annotation:
+  - `confirmed_plasma` if plasma is explicit in title, abstract, methods, results, or supplementary text
+  - `mixed_includes_plasma` if plasma is explicit but the study also includes CSF, serum, tissue, urine, or cell-line material
+  - `likely_non_plasma` if the manuscript points to a different primary matrix such as CSF, platelet releasate, urine, BALF, or cell-line material
+  - `unclear` if the paper cannot confirm plasma; do not auto-promote these datasets into a plasma campaign
+- if the accession is already present in the local plasma collection, refine the existing SDRF instead of creating a duplicate target
 
 If **no PXD** but an experiment description, skip to Step 2.
 
@@ -137,7 +221,7 @@ Organize columns in this order:
 
 **Characteristics columns (sample metadata):**
 - All `characteristics[...]` columns from TERMS.tsv for the selected templates
-- Order: organism, organism part, disease, cell type, material type, then template-specific (age, sex, cell line, etc.), then biological replicate
+- Order: organism, organism part, disease, cell type, material type, then template-specific (developmental stage, age, sex, cell line, etc.), then biological replicate
 
 **Anchor + technology:**
 - `assay name`
@@ -156,13 +240,29 @@ Organize columns in this order:
 
 ## Step 4: Fill Sample Metadata
 
+Before filling demographic fields, decide whether the paper supports:
+- cohort-level demographic context only
+- or true sample-level demographic assignment
+
+Use this rule:
+- `developmental stage` may come from cohort-level manuscript evidence if the full analyzed cohort is unambiguously adult, pediatric, fetal, juvenile, and so on
+- `age`, `sex`, and `ethnicity` require source-sample or individual-level mapping
+- if only cohort summaries exist, leave per-sample demographic fields as missing / omitted rather than guessing
+
 For EACH unique value that goes into a characteristics column:
 
-### 4.1 Search OLS for the correct ontology term
+### 4.1 Normalize a short mention first
+- If the value already comes from PRIDE metadata or an existing SDRF cell, clean that value and use it directly.
+- If the value comes from a manuscript, first extract the shortest standalone entity phrase and keep the sentence only as evidence.
+- Search the expanded form before the abbreviation when both are available.
+- Do NOT send full manuscript sentences to OLS or ZOOMA unless you are debugging a failed lookup.
+
+### 4.2 Search OLS lexically first
 ```text
 Use: searchClasses(query="breast carcinoma", ontologyId="mondo")
 Or:  search(query="Homo sapiens")       # only when the target ontology is unknown
 ```
+For clean SDRF-like values, lexical exact or synonym matches are the default path and usually outperform embeddings.
 
 **Smart mode is the default** (do NOT pass `mode` unless you need to override):
 
@@ -177,7 +277,34 @@ Override only when necessary:
 - `mode="exact"` — force exact-only (e.g. strict validation); empty on miss.
 - `mode="fuzzy"` — force fuzzy top-N; use when exploring close neighbours.
 
-### 4.2 Verify the term is from the CORRECT ontology
+### 4.3 Use embeddings and ZOOMA only when needed
+Trigger OLS embedding search when:
+- lexical search returns no result
+- the mention is abbreviation-like (`HCC`, `PDAC`, `GBM`, `TNBC`)
+- the top lexical hits are conflicting or clearly over-specific
+- the mention came from noisy manuscript text rather than a curated label
+
+Use the OLS MCP tools in this order:
+```text
+1. listEmbeddingModels()
+2. searchClassesWithEmbeddingModel(query="<clean phrase>", ontologyId="<ontology>", model="<embed model>")
+3. If ontology-specific search is unavailable, use searchWithEmbeddingModel() and filter manually
+```
+
+Use ZOOMA as a slower fallback for manuscript-derived free text or when lexical and embedding results still disagree:
+```text
+GET https://www.ebi.ac.uk/spot/zooma/v2/api/services/annotate?propertyValue=<clean phrase>&propertyType=<field>
+```
+- Accept only `HIGH` or `GOOD` confidence mappings from ZOOMA
+- Always verify returned `semanticTags` in OLS and confirm the ontology is allowed by `TERMS.tsv`
+- Use ZOOMA mainly for disease, phenotype, treatment, or other curator-style phrases backed by prior curation
+
+Field defaults:
+- `organism`, `cell line` → lexical first, fallback methods rarely needed
+- `organism part`, `cell type`, `treatment` → lexical first, embeddings/ZOOMA only if lexical is weak
+- `disease`, `phenotype` → lexical first, embeddings and ZOOMA are useful fallbacks
+
+### 4.4 Verify the term is from the CORRECT ontology
 Read TERMS.tsv `values` field for the column to determine which ontology(ies) to search:
 - organism → NCBITaxon
 - organism part → UBERON (primary), BTO (fallback)
@@ -186,8 +313,9 @@ Read TERMS.tsv `values` field for the column to determine which ontology(ies) to
 - cell line → CLO, BTO, EFO (+ Cellosaurus for accession)
 - instrument → MS, PRIDE
 - modifications → UNIMOD
+- biosample accession number → exact BioSample accession from ENA/BioSamples only; do not infer from fuzzy search alone
 
-### 4.3 Cell Line Lookup (if using cell-lines template)
+### 4.5 Cell Line Lookup (if using cell-lines template)
 
 For any `characteristics[cell line]` column, prefer the dedicated
 `/sdrf:cellline` workflow or the live Cellosaurus service rather than a bundled
@@ -211,13 +339,45 @@ The goal is to recover:
 Any CLO, BTO, EFO, MONDO, UBERON, CL, or NCBITaxon accession written into the
 SDRF must still be verified via OLS before finalizing the row.
 
-### 4.4 Check specificity
+For organisms, prefer the current NCBITaxon label over legacy synonyms when validation fails on an older name.
+Crosslinking cleanup examples that should be normalized before final validation:
+- `chaetomium thermophilum` → `thermochaetoides thermophila`
+- `chlorobium tepidum` → `chlorobaculum tepidum`
+- `canis familiaris` → `canis lupus familiaris`
+- `deinococcus radiodurans r1` → `deinococcus radiodurans`
+
+For crosslinking-specific assay cleanup, use explicit file-name evidence when the SDRF still says `NT=unknown crosslinker;AC=XLMOD:00000`. Safe examples seen in sandbox cleanup:
+- file names containing `DSSO` → `NT=DSSO;AC=XLMOD:02010;CL=yes;TA=K,S,T,Y,nterm;MH=54.01;ML=85.98`
+- file names containing `BS3` → `NT=BS3;AC=XLMOD:02000`
+- file names containing `TurboID` → `NT=TurboID;AC=XLMOD:02251`
+- file names containing `iQPIR`, `BDP`, or `d8BDP` → `NT=PIR;AC=XLMOD:02014`
+
+After recovering a known cross-linker, backfill `characteristics[crosslink distance]` when the template guidance is explicit:
+- `BS3` / `DSS` → `30 Å`
+- `DSSO` → `26.4 Å`
+- `EDC` → `11.4 Å`
+- `formaldehyde` → `2 Å`
+- `DSBU` / `DSBSO` → `26.4 Å`
+- `SDA` / `sulfo-SDA` → `18 Å`
+
+For `comment[crosslink enrichment method]`, use explicit separation tokens from `comment[data file]` when the field is still missing:
+- `SCX` → `strong cation exchange chromatography`
+- `SEC` → `size exclusion chromatography`
+- `FAIMS` → `FAIMS`
+- dataset title containing `streptavidin pull-down` → `streptavidin pull-down`
+- dataset title containing `IMAC-enrichable` → `immobilized metal affinity chromatography`
+- dataset title containing `CuAAC-enrichable` → `CuAAC enrichment`
+
+When one of those enrichment-method values is recovered and `characteristics[enrichment process]` is still missing, backfill `enrichment of cross-linked peptides`.
+
+### 4.6 Check specificity
 - "cancer" → too generic, use "breast carcinoma" or specific subtype
 - "tissue" → too generic, use "liver" or "temporal cortex"
 - "cell" → too generic, use "T cell" or "epithelial cell"
 - Use getChildren() to see if there's a more specific child term
+- If embeddings or ZOOMA suggest a child term that is more specific than the paper text supports, prefer the broader lexical term and note the ambiguity
 
-### 4.5 Use reserved words correctly
+### 4.7 Use reserved words correctly
 - `not available` — information exists but was not provided
 - `not applicable` — property doesn't apply to this sample
 - `normal` — healthy control (for disease column, use with PATO:0000461)
@@ -231,6 +391,12 @@ SDRF must still be verified via OLS before finalizing the row.
 searchClasses(query="Q Exactive", ontologyId="ms")
 Format in SDRF: AC=MS:1001911;NT=Q Exactive HF
 ```
+
+If validation complains about an instrument term that is also documented in the
+official PSI-MS / ProteomeXchange schema, verify the accession first instead of
+rewriting the instrument blindly. Example: `LTQ Orbitrap Elite` with
+`MS:1001910` may warn in some validator/cache combinations even though the term
+is publicly documented.
 
 ### 5.2 Modifications — CRITICAL
 Use EXACT UNIMOD accessions. Common setup:
@@ -351,13 +517,13 @@ Present the validated SDRF as a TSV code block and explain:
 
 If the annotation was for a **ProteomeXchange dataset** (PXD accession):
 
-1. Check if this PXD already exists in `bigbio/sdrf-annotated-datasets` under `datasets/{PXD}/`
+1. Check if this PXD already exists in `spec/annotated-projects/{PXD}/`
 2. Tell the user their annotation can be contributed to the community:
 
 ```text
 Your SDRF annotation for {PXD} is ready!
 
-The sdrf-annotated-datasets community repository collects annotated SDRF files
+The proteomics-sample-metadata community repository collects annotated SDRF files
 for ProteomeXchange datasets. Contributing your annotation means:
   - Other researchers can reuse your metadata
   - Analysis pipelines (quantms) can automatically reprocess the dataset
@@ -366,7 +532,7 @@ for ProteomeXchange datasets. Contributing your annotation means:
 Run /sdrf:contribute {PXD} to create a PR, or see the commands to do it manually.
 ```
 
-3. If the PXD already exists in `datasets/`, mention this is an update to an existing annotation
+3. If the PXD already exists in annotated-projects/, mention this is an update to an existing annotation
 
 This step is a recommendation only — do not force the user to contribute.
 
