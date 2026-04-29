@@ -1,6 +1,6 @@
 ---
 name: sdrf:contribute
-description: Use when the user has a completed SDRF annotation for a ProteomeXchange dataset and wants to contribute it back to the community via a PR to proteomics-sample-metadata.
+description: Use when the user has a completed SDRF annotation for a ProteomeXchange dataset and wants to contribute it back to the community via a PR to sdrf-annotated-datasets.
 user-invocable: true
 argument-hint: "[PXD accession and SDRF file path]"
 ---
@@ -8,7 +8,7 @@ argument-hint: "[PXD accession and SDRF file path]"
 # SDRF Contribution Workflow
 
 You are helping the user contribute an annotated SDRF file back to the community repository
-(`bigbio/proteomics-sample-metadata`). This is the final step after annotation, validation,
+(`bigbio/sdrf-annotated-datasets`). This is the final step after annotation, validation,
 and review — closing the loop from "I annotated a dataset" to "the community can reuse it."
 
 ## Step 1: Check Prerequisites
@@ -23,9 +23,16 @@ and review — closing the loop from "I annotated a dataset" to "the community c
 - Ask the user to confirm the file path or provide the content
 
 ### 1.3 Check if this is a new annotation or an update
-Check if the PXD already exists in the community repository:
+Check if the PXD already exists in the community repository
+(`bigbio/sdrf-annotated-datasets`):
 ```text
-Look for: spec/annotated-projects/{PXD}/{PXD}.sdrf.tsv
+Look for: datasets/{PXD}/{PXD}.sdrf.tsv
+```
+
+You can check via the GitHub API without cloning:
+```bash
+gh api repos/bigbio/sdrf-annotated-datasets/contents/datasets/{PXD} \
+  --silent && echo "exists" || echo "new"
 ```
 
 - **New annotation**: The PXD folder does not exist → this is a new contribution
@@ -56,16 +63,16 @@ Warnings are acceptable — mention them but allow the user to proceed.
 ## Step 3: Prepare the File
 
 ### 3.1 File naming convention
-The community repository uses this structure:
+The community repository (`bigbio/sdrf-annotated-datasets`) uses this structure:
 ```text
-annotated-projects/
+datasets/
 └── {PXD}/
     └── {PXD}.sdrf.tsv
 ```
 
 For datasets with multiple sub-experiments:
 ```text
-annotated-projects/
+datasets/
 └── {PXD}/
     ├── {PXD}-celllines.sdrf.tsv
     └── {PXD}-tissues.sdrf.tsv
@@ -93,32 +100,29 @@ Execute the full contribution flow:
 
 ```bash
 # 1. Fork the repository (if not already forked)
-gh repo fork bigbio/proteomics-sample-metadata --clone=false
+gh repo fork bigbio/sdrf-annotated-datasets --clone=false
 
 # 2. Clone the user's fork
-gh repo clone {username}/proteomics-sample-metadata /tmp/proteomics-sample-metadata
-cd /tmp/proteomics-sample-metadata
+gh repo clone {username}/sdrf-annotated-datasets /tmp/sdrf-annotated-datasets
+cd /tmp/sdrf-annotated-datasets
 
-# 3. Initialize submodules
-git submodule update --init --recursive
-
-# 4. Create a branch
+# 3. Create a branch
 git checkout -b annotation/{PXD}
 
-# 5. Create the directory and copy the file
-mkdir -p annotated-projects/{PXD}
-cp {source_path}/{PXD}.sdrf.tsv annotated-projects/{PXD}/
+# 4. Create the directory and copy the file
+mkdir -p datasets/{PXD}
+cp {source_path}/{PXD}.sdrf.tsv datasets/{PXD}/
 
-# 6. Commit
-git add annotated-projects/{PXD}/
+# 5. Commit
+git add datasets/{PXD}/
 git commit -m "Add SDRF annotation for {PXD}"
 
-# 7. Push
+# 6. Push
 git push -u origin annotation/{PXD}
 
-# 8. Create the PR
+# 7. Create the PR
 gh pr create \
-  --repo bigbio/proteomics-sample-metadata \
+  --repo bigbio/sdrf-annotated-datasets \
   --title "Add SDRF annotation for {PXD}" \
   --body "$(cat <<'EOF'
 ## Add SDRF annotation for {PXD}

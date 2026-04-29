@@ -34,6 +34,7 @@ If a publication is available:
 - Are all conditions from the paper represented?
 - Do the instruments match?
 - Are demographics (age, sex) consistent with the paper?
+- Is `characteristics[developmental stage]` supported by the cohort description even if age is reported only at group level?
 - Are tissue types correctly annotated?
 
 Flag any discrepancies:
@@ -52,6 +53,7 @@ When SDRF and paper/PRIDE disagree:
 - **Instrument mismatch**: PRIDE might say "Q Exactive" while paper says "Q Exactive HF". The paper is usually more specific — update SDRF to match the paper's instrument model.
 - **Tissue specificity**: If paper says "hippocampus" but SDRF says "brain", update SDRF to the more specific term from the paper.
 - **Demographic mismatch**: If paper has a demographics table, prioritize it. SDRF might have been filled from incomplete metadata.
+- **Cohort-only demographics**: If the paper reports only cohort summaries, `developmental stage` may still be supportable, but do not force per-sample `age`, `sex`, or `ethnicity` without an individual-level mapping table.
 - **File count mismatch**: Some files in PRIDE may be non-raw (search results, FASTA, etc.). Compare only raw files.
 
 ## Step 4: Cross-Reference with PRIDE
@@ -61,6 +63,16 @@ If a PXD accession is available:
   ```text
   mcp PRIDE → get_project_files(project_accession="PXD######")
   ```
+  REST fallback:
+  ```text
+  GET https://www.ebi.ac.uk/pride/ws/archive/v3/projects/PXD######/files/all
+  ```
+  If the project is hosted by MassIVE and PRIDE returns `0` files, use:
+  ```text
+  python scripts/massive_raw_files.py PXD###### --mode raw --format tsv
+  ```
+  to compare SDRF `comment[data file]` values against the MassIVE-backed raw
+  file list.
 - Does the organism match?
 - Does the instrument match?
 - Are all raw files accounted for?
@@ -127,4 +139,5 @@ Provide clear next steps:
 4. Suggest running final validation after fixes
 5. If the SDRF is for a ProteomeXchange dataset and the verdict is VALID or NEEDS MINOR FIXES:
    suggest contributing the annotation via `/sdrf:contribute {PXD}` to the
-   `proteomics-sample-metadata` community repository
+   `sdrf-annotated-datasets` community repository
+

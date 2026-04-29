@@ -5,7 +5,7 @@ SDRF (Sample and Data Relationship Format) annotation in proteomics.
 
 ## What This Does
 
-14 structured workflows (SKILL.md files) that guide AI assistants through SDRF tasks
+16 structured workflows (SKILL.md files) that guide AI assistants through SDRF tasks
 using existing MCP tools (OLS, PRIDE, PubMed, bioRxiv, EuropePMC).
 Instead of guessing at ontology terms or validation rules, skills encode the
 community's annotation expertise as repeatable methodology.
@@ -22,11 +22,12 @@ Skills read these files at runtime. When the spec changes, run `git submodule up
 
 ## Available Skills (all under `sdrf:` namespace)
 
-All 14 skills are user-invocable. Type `/sdrf:` and autocomplete will show them all.
+All 16 skills are user-invocable. Type `/sdrf:` and autocomplete will show them all.
 
 | Command | Purpose |
 |---------|---------|
 | `/sdrf:setup` | Install dependencies (parse_sdrf, techsdrf) — conda or pip guided setup |
+| `/sdrf:autoresearch` | Autonomous retained-improvement loop over one dataset, a manifest, or a dataset class |
 | `/sdrf:knowledge` | SDRF format rules, column definitions (from TERMS.tsv), ontology routing, modification format, reserved words |
 | `/sdrf:templates` | Template system (from templates.yaml), selection rules, mutual exclusivity, inheritance |
 | `/sdrf:annotate` | Full annotation: PXD → PRIDE + paper → select templates → draft SDRF → validate |
@@ -39,8 +40,9 @@ All 14 skills are user-invocable. Type `/sdrf:` and autocomplete will show them 
 | `/sdrf:explain` | Explain any SDRF column, error, or concept in plain language |
 | `/sdrf:convert` | Pipeline selection (MaxQuant, DIA-NN, OpenMS, quantms) + conversion commands |
 | `/sdrf:design` | Experimental design: batch effects, confounders, replication, MSstats contrasts |
-| `/sdrf:contribute` | Contribute annotated SDRF back to proteomics-sample-metadata via PR (automated or guided) |
+| `/sdrf:contribute` | Contribute annotated SDRF back to sdrf-annotated-datasets via PR (automated or guided) |
 | `/sdrf:techrefine` | Verify/refine technical metadata (instrument, tolerances, mods, DDA/DIA) from raw files via techsdrf |
+| `/sdrf:cellline` | Look up cell lines via Cellosaurus (REST API or bulk file) and translate them into SDRF cell-line columns (organism, disease, sampling site, sex, ancestry, age) |
 
 ## MCP Servers Used
 
@@ -63,3 +65,5 @@ These skills expect the following MCP servers to be available:
 9. Multiple `comment[modification parameters]` columns are normal (one per modification)
 10. Multiple `comment[sdrf template]` columns are normal (one per template)
 11. ALWAYS validate with `parse_sdrf validate-sdrf --sdrf_file X --template Y` before presenting any produced SDRF to the user — update spec first with `git submodule update --remote --recursive`
+12. When the user asks for autonomous large-scale annotation, use `/sdrf:autoresearch` to resolve the target set, choose an objective, and run retained improvement rounds until the configured stop rule fires
+13. For blood-plasma discovery or biomarker campaigns, default to `Homo sapiens` only and require manuscript-backed plasma confirmation before promoting a dataset into annotation

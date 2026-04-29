@@ -174,7 +174,7 @@ Present the re-validation summary alongside the changelog.
 
 If all errors are fixed and the SDRF is for a ProteomeXchange dataset (PXD accession),
 suggest contributing the corrected annotation via `/sdrf:contribute {PXD}` to the
-`proteomics-sample-metadata` community repository.
+`sdrf-annotated-datasets` community repository.
 
 ## When NOT to Auto-Fix
 
